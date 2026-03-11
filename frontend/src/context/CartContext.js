@@ -1,0 +1,68 @@
+import { createContext, useContext, useState, useCallback } from "react";
+
+const CartContext = createContext();
+
+export const CartProvider = ({ children }) => {
+  const [cart, setCart] = useState([]);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponInfo, setCouponInfo] = useState(null);
+
+  const addToCart = useCallback((product, qty = 1, size = "", color = "") => {
+    setCart(prev => {
+      const existing = prev.find(i => i._id === product._id && i.size === size && i.color === color);
+      if (existing) {
+        return prev.map(i =>
+          i._id === product._id && i.size === size && i.color === color
+            ? { ...i, qty: Math.min(i.qty + qty, product.stock) }
+            : i
+        );
+      }
+      return [...prev, { ...product, qty, size, color }];
+    });
+  }, []);
+
+  const updateCart = useCallback((id, qty, size, color) => {
+    if (qty <= 0) {
+      setCart(prev => prev.filter(i => !(i._id === id && i.size === size && i.color === color)));
+    } else {
+      setCart(prev => prev.map(i =>
+        i._id === id && i.size === size && i.color === color ? { ...i, qty } : i
+      ));
+    }
+  }, []);
+
+  const removeFromCart = useCallback((id, size, color) => {
+    setCart(prev => prev.filter(i => !(i._id === id && i.size === size && i.color === color)));
+  }, []);
+
+  const clearCart = useCallback(() => {
+    setCart([]);
+    setCouponCode("");
+    setCouponInfo(null);
+  }, []);
+
+  const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+  const discountAmt = couponInfo
+    ? couponInfo.type === "percent"
+      ? Math.round(subtotal * couponInfo.discount)
+      : couponInfo.discount
+    : 0;
+
+  const afterDiscount = subtotal - discountAmt;
+  const shipping = afterDiscount >= 2000 ? 0 : 99;
+  const total = afterDiscount + shipping;
+  const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
+
+  return (
+    <CartContext.Provider value={{
+      cart, addToCart, updateCart, removeFromCart, clearCart,
+      subtotal, discountAmt, shipping, total, cartCount,
+      couponCode, setCouponCode, couponInfo, setCouponInfo,
+    }}>
+      {children}
+    </CartContext.Provider>
+  );
+};
+
+export const useCart = () => useContext(CartContext);
