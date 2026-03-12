@@ -365,6 +365,37 @@ adminRouter.post("/users", async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
+// PATCH /api/admin/inventory/:id — update stock for a product
+adminRouter.patch("/inventory/:id", async (req, res) => {
+  try {
+    const { stock, adjustment, note } = req.body;
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+    
+    let newStock;
+    if (adjustment !== undefined) {
+      // Relative adjustment: +20, -5 etc
+      newStock = Math.max(0, product.stock + Number(adjustment));
+    } else {
+      // Absolute set
+      newStock = Math.max(0, Number(stock));
+    }
+    product.stock = newStock;
+    await product.save();
+    res.json({ success: true, product: { _id: product._id, name: product.name, stock: product.stock } });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// GET /api/admin/inventory — all products with stock info
+adminRouter.get("/inventory", async (req, res) => {
+  try {
+    const products = await Product.find()
+      .select("name category price stock images badge featured trending createdAt")
+      .sort({ stock: 1 }); // low stock first
+    res.json({ success: true, products });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
 // PUT /api/admin/users/:id/toggle — activate or deactivate account
 adminRouter.put("/users/:id/toggle", async (req, res) => {
   try {

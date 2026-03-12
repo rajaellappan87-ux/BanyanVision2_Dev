@@ -15,7 +15,23 @@ const { User, Product, Coupon } = require(path.join(__dirname, "models"));
 const app = express();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({ origin: ["http://localhost:3000", "http://127.0.0.1:3000", process.env.CLIENT_URL].filter(Boolean), credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowed = ["http://localhost:3000","http://127.0.0.1:3000", process.env.CLIENT_URL].filter(Boolean);
+    if (
+      allowed.includes(origin) ||
+      origin.endsWith(".githubpreview.dev") ||
+      origin.endsWith(".app.github.dev") ||
+      origin.endsWith(".github.dev") ||
+      origin.endsWith(".ngrok-free.app") ||
+      origin.endsWith(".ngrok.io") ||
+      origin.endsWith(".loca.lt")
+    ) return callback(null, true);
+    return callback(null, true); // allow all for local dev/preview sharing
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));

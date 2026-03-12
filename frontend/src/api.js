@@ -1,6 +1,20 @@
 import axios from "axios";
 
-const API = axios.create({ baseURL: "http://localhost:5000/api" });
+// Auto-detect backend URL:
+// - When accessed via VS Code port forwarding, the frontend URL looks like
+//   https://XXXX-3000.githubpreview.dev — so backend is XXXX-5000.githubpreview.dev
+// - When running locally, just use localhost:5000
+const getBaseURL = () => {
+  const h = window.location.hostname;
+  if (h === "localhost" || h === "127.0.0.1") return "http://localhost:5000/api";
+  // VS Code port forwarding — replace port 3000 with 5000 in the host
+  const backendHost = window.location.origin
+    .replace("-3000.", "-5000.")
+    .replace(":3000", ":5000");
+  return `${backendHost}/api`;
+};
+
+const API = axios.create({ baseURL: getBaseURL() });
 
 // Attach JWT token to every request automatically
 API.interceptors.request.use((config) => {
@@ -50,4 +64,8 @@ export const apiAdminUsers      = ()           => API.get("/admin/users");
 export const apiAdminCreateUser = (data)       => API.post("/admin/users", data);
 export const apiAdminToggleUser = (id)         => API.put(`/admin/users/${id}/toggle`);
 export const apiAdminChangeRole = (id, role)   => API.put(`/admin/users/${id}/role`, { role });
-export const apiAdminDeleteUser = (id)         => API.delete(`/admin/users/${id}`);
+export const apiAdminDeleteUser   = (id)         => API.delete(`/admin/users/${id}`);
+
+// ── Inventory ─────────────────────────────────────────────────────────────────
+export const apiAdminInventory      = ()              => API.get("/admin/inventory");
+export const apiAdminStockUpdate    = (id, data)      => API.patch(`/admin/inventory/${id}`, data);
