@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useBreakpoint } from "../hooks";
 import { Ic } from "../utils/helpers";
 import { apiAdminCreateUser, apiAdminToggleUser, apiAdminChangeRole, apiAdminDeleteUser } from "../api";
-import { UserPlus, Trash2, Shield, User } from "lucide-react";
+import { Phone, Search, Shield, Trash2, User, UserPlus, Users } from "lucide-react";
 
 /* ── ADMIN CUSTOMERS ─────────────────────────────────────────────────────────── */
 const AdminCustomers = ({ users, setUsers, toast, isMobile }) => {

@@ -3,6 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { usePromoData, updatePromo } from "../store/contentStore";
 import { DEFAULT_PROMO } from "../constants/defaults";
 import { Ic } from "../utils/helpers";
+import { Archive, Edit, Save, Tag } from "lucide-react";
 
 /* ── PROMO BANNER EDITOR ─────────────────────────────────────────────────────── */
 const PromoBannerEditor = ({ toast }) => {

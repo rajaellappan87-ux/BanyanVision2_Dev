@@ -3,7 +3,7 @@ import { useBreakpoint } from "../../hooks";
 import { useCart } from "../../context/CartContext";
 import { useCatConfig } from "../../store/catStore";
 import { Ic, fmt, disc, thumb, COLORS_MAP } from "../../utils/helpers";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart, Home, Image, Info, LogOut, Menu, Package, Shirt, ShoppingCart, User } from "lucide-react";
 import { Stars } from "../../components/ui/Common";
 
 /* ── Product Card ────────────────────────────────────────────────────────────── */
@@ -25,9 +25,10 @@ const ProductCard = ({ p, setPage, toast }) => {
       <div style={{position:"relative",borderRadius:"20px 20px 0 0",overflow:"hidden",background:cfg.light}}>
         {p.badge&&<div className="tag" style={{position:"absolute",top:12,left:12,background:cfg.grad,color:"#fff",zIndex:2,fontSize:10}}>{p.badge}</div>}
         {d>0&&<div className="tag" style={{position:"absolute",top:12,right:12,background:"linear-gradient(135deg,#EF4444,#F97316)",color:"#fff",zIndex:2,fontSize:10}}>−{d}%</div>}
-        <div onClick={()=>setPage(`product-${p._id}`)} style={{overflow:"hidden",height:isMobile?210:270}}>
-          <img src={imgs[imgIdx]?.url||`https://placehold.co/600x800/${cfg.light.replace("#","")}/C2185B?text=${encodeURIComponent(p.name)}`} alt={p.name}
-            style={{width:"100%",height:"100%",objectFit:"cover",transition:"transform .6s cubic-bezier(.25,.46,.45,.94)",transform:hov?"scale(1.07)":"scale(1)"}}/>
+        <div onClick={()=>setPage(`product-${p._id}`)} style={{overflow:"hidden",aspectRatio:"9/11",width:"100%"}}>
+          <img src={imgs[imgIdx]?.url||`https://placehold.co/900x1100/${cfg.light.replace("#","")}/C2185B?text=${encodeURIComponent(p.name)}`} alt={p.name}
+            loading="lazy"
+            style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"center",background:cfg.light,transition:"transform .6s cubic-bezier(.25,.46,.45,.94)",transform:hov?"scale(1.04)":"scale(1)"}}/>
         </div>
         {/* Quick add */}
         <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"10px 12px",background:"linear-gradient(to top,rgba(26,10,0,.75) 0%,transparent 100%)",transform:hov?"translateY(0)":"translateY(110%)",transition:"transform .3s cubic-bezier(.25,.46,.45,.94)"}}>

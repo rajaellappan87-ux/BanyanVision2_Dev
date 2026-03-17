@@ -2,7 +2,7 @@ import React from "react";
 import { useBreakpoint } from "../hooks";
 import { _settings } from "../store/contentStore";
 import { Ic } from "../utils/helpers";
-import { Lock, FileText, RefreshCw, Truck, ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, Home, Lock, Phone, RefreshCw, Truck, User } from "lucide-react";
 
 /* ── POLICY PAGE TEMPLATE ────────────────────────────────────────────────────── */
 const PolicyPage = ({ title, icon, children, setPage }) => {

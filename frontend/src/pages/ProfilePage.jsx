@@ -3,7 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { useAuth } from "../context/AuthContext";
 import { Ic } from "../utils/helpers";
 import { apiUpdateProfile } from "../api";
-import { User, Save } from "lucide-react";
+import { Phone, Save, User } from "lucide-react";
 
 /* ── PROFILE ─────────────────────────────────────────────────────────────────── */
 const ProfilePage = ({ toast }) => {

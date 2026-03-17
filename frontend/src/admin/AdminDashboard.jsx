@@ -17,13 +17,7 @@ import SiteSettings     from "./SiteSettings";
 import CategoryManager  from "./CategoryManager";
 import PromoBannerEditor from "./PromoBannerEditor";
 import AboutPageEditor  from "./AboutPageEditor";
-import {
-  LayoutDashboard, ShoppingBag, Package, PlusCircle, Warehouse, Users,
-  BarChart2, TicketPercent, Layers, Gift, FileText, Settings,
-  TrendingUp, Edit, Trash2, Plus, Minus, Check, Save, Tag,
-  AlertTriangle, XCircle, CheckCircle, Clock, Truck, CreditCard,
-  MapPin, Phone, Mail, Download, Send, Printer,
-} from "lucide-react";
+import { AlertTriangle, BarChart2, Check, CheckCircle, Clock, CreditCard, Download, Edit, FileText, Gift, Image, Layers, LayoutDashboard, Mail, MapPin, Minus, Package, Percent, Phone, Plus, PlusCircle, Printer, Save, Send, Settings, ShoppingBag, Tag, TicketPercent, Trash2, TrendingUp, Truck, Users, Warehouse, XCircle } from "lucide-react";
 
 /* ── ADMIN ───────────────────────────────────────────────────────────────────── */
 const AdminDashboard = ({ setPage, toast }) => {
@@ -164,7 +158,7 @@ const AdminDashboard = ({ setPage, toast }) => {
               {products.map(p=>(
                 <div key={p._id} style={{background:"#fff",borderRadius:"14px",border:"1.5px solid var(--border)",display:"flex",gap:14,padding:16,boxShadow:"0 4px 24px rgba(194,24,91,0.08)"}}>
                   <div style={{position:"relative",flexShrink:0}}>
-                    <img src={p.images?.[0]?.url||`https://placehold.co/72x88/FDF8F3/C2185B?text=P`} alt={p.name} loading="lazy" style={{width:72,height:88,objectFit:"cover",borderRadius:10}}/>
+                    <img src={p.images?.[0]?.url||`https://placehold.co/72x88/FDF8F3/C2185B?text=P`} alt={p.name} loading="lazy" style={{width:72,height:88,objectFit:"contain",background:"var(--ivory2)",borderRadius:10}}/>
                     {p.images?.length>1&&<div style={{position:"absolute",bottom:3,right:3,background:"rgba(0,0,0,.7)",color:"#F9A825",fontSize:9,padding:"2px 5px",borderRadius:4,fontWeight:700}}>+{p.images.length-1}</div>}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
@@ -298,7 +292,7 @@ const AdminDashboard = ({ setPage, toast }) => {
                 {stats.topProducts.map((p,i)=>(
                   <div key={p._id} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 0",borderBottom:"1px solid var(--border)"}}>
                     <span style={{fontFamily:"var(--font-d)",fontWeight:900,width:24,fontSize:18,background:"linear-gradient(135deg,var(--rose),var(--saffron))",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>#{i+1}</span>
-                    <img src={p.images?.[0]?.url||`https://placehold.co/36x44/FDF8F3/C2185B?text=P`} alt={p.name} loading="lazy" style={{width:36,height:44,objectFit:"cover",borderRadius:8}}/>
+                    <img src={p.images?.[0]?.url||`https://placehold.co/36x44/FDF8F3/C2185B?text=P`} alt={p.name} loading="lazy" style={{width:36,height:44,objectFit:"contain",background:"var(--ivory2)",borderRadius:8}}/>
                     <div style={{flex:1,overflow:"hidden"}}>
                       <div style={{fontSize:13,fontWeight:700,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                       <div style={{fontSize:11,color:"var(--muted)",fontWeight:500}}>{p.numReviews} reviews · ★{(p.rating||0).toFixed(1)}</div>

@@ -3,7 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { useCatConfig } from "../store/catStore";
 import { Ic, fmt } from "../utils/helpers";
 import { apiAdminInventory, apiAdminStockUpdate } from "../api";
-import { RefreshCw, Plus, Minus, Edit, Warehouse, ZoomIn } from "lucide-react";
+import { Edit, Minus, Plus, RefreshCw, Search, Warehouse, ZoomIn } from "lucide-react";
 
 /* ── ADMIN INVENTORY ─────────────────────────────────────────────────────────── */
 const AdminInventory = ({ toast }) => {
@@ -176,7 +176,7 @@ const AdminInventory = ({ toast }) => {
               <div key={p._id} style={{padding:"14px 16px",borderBottom:"1px solid var(--border)",background:p.stock===0?"#FEF2F2":p.stock<=10?"#FFFBF0":"#fff"}}>
                 <div style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:10}}>
                   <img src={p.images?.[0]?.url||"https://placehold.co/48x58/FDF8F3/C2185B?text=P"} alt={p.name}
-                    loading="lazy" style={{width:48,height:58,objectFit:"cover",borderRadius:8,flexShrink:0,border:"1px solid var(--border)"}}/>
+                    loading="lazy" style={{width:48,height:58,objectFit:"contain",background:"var(--ivory2)",borderRadius:8,flexShrink:0,border:"1px solid var(--border)"}}/>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontWeight:700,fontSize:13,color:"var(--dark)",marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                     <div style={{fontSize:11,color:"var(--rose)",fontWeight:600,marginBottom:4}}>{p.category}</div>
@@ -208,7 +208,7 @@ const AdminInventory = ({ toast }) => {
                 {/* Product */}
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <img src={p.images?.[0]?.url||"https://placehold.co/40x48/FDF8F3/C2185B?text=P"} alt={p.name}
-                    loading="lazy" style={{width:40,height:48,objectFit:"cover",borderRadius:7,flexShrink:0,border:"1px solid var(--border)"}}/>
+                    loading="lazy" style={{width:40,height:48,objectFit:"contain",background:"var(--ivory2)",borderRadius:7,flexShrink:0,border:"1px solid var(--border)"}}/>
                   <div>
                     <div style={{fontWeight:700,fontSize:13,color:"var(--dark)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:240}}>{p.name}</div>
                     {p.badge&&<span style={{fontSize:9,fontWeight:800,color:"var(--saffron)",background:"#FFF3E0",padding:"1px 6px",borderRadius:4,letterSpacing:.3}}>{p.badge}</span>}
@@ -282,7 +282,7 @@ const AdminInventory = ({ toast }) => {
             {/* Product info strip */}
             <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"var(--ivory2)",borderRadius:12,marginBottom:20,border:"1.5px solid var(--border)"}}>
               <img src={editing.product.images?.[0]?.url||"https://placehold.co/44x54/FDF8F3/C2185B?text=P"} alt=""
-                style={{width:44,height:54,objectFit:"cover",borderRadius:8,border:"1px solid var(--border)"}}/>
+                style={{width:44,height:54,objectFit:"contain",background:"var(--ivory2)",borderRadius:8,border:"1px solid var(--border)"}}/>
               <div>
                 <div style={{fontSize:11,color:"var(--muted)",fontWeight:600}}>{editing.product.category}</div>
                 <div style={{fontSize:13,fontWeight:700,color:"var(--dark)"}}>

@@ -2,9 +2,7 @@ import React, { useState } from "react";
 import { useBreakpoint } from "../hooks";
 import { Ic, fmt, printShippingLabel } from "../utils/helpers";
 import { apiUpdateStatus, apiDeleteOrder, apiExportOrdersEmail } from "../api";
-import { Clock, Settings, Truck, CheckCircle, XCircle, Package,
-         Download, Send, Trash2, Printer, MapPin, CreditCard, FileText,
-         Tag, Phone, Mail } from "lucide-react";
+import { CheckCircle, Clock, CreditCard, Download, FileText, Info, Mail, MapPin, Package, Phone, Printer, Search, Send, Settings, Tag, Trash2, Truck, XCircle } from "lucide-react";
 
 /* ── ADMIN ORDERS LIST ───────────────────────────────────────────────────────── */
 const AdminOrdersList = ({ orders, setOrders, isMobile, iStyle, updateSt, toast }) => {
@@ -222,7 +220,7 @@ const AdminOrdersList = ({ orders, setOrders, isMobile, iStyle, updateSt, toast 
               {ord.items.map((item,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",gap:7}}>
                   <img src={item.image||"https://placehold.co/36x44/FDF8F3/C2185B?text=P"} alt={item.name}
-                    loading="lazy" style={{width:36,height:44,objectFit:"cover",borderRadius:8}}/>
+                    loading="lazy" style={{width:36,height:44,objectFit:"contain",background:"var(--ivory2)",borderRadius:8}}/>
                   <div>
                     <div style={{fontSize:11,fontWeight:700,color:"var(--text)"}}>{item.name}</div>
                     <div style={{fontSize:10,color:"var(--muted)"}}>

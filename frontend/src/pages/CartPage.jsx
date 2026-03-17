@@ -3,7 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { useCart } from "../context/CartContext";
 import { Ic, fmt, thumb } from "../utils/helpers";
 import { apiValidateCoupon } from "../api";
-import { Trash2, Tag, ShoppingBag, ArrowRight } from "lucide-react";
+import { ArrowRight, Lock, ShoppingBag, Tag, Trash2 } from "lucide-react";
 
 /* ── CART ────────────────────────────────────────────────────────────────────── */
 const CartPage = ({ setPage, toast }) => {
@@ -63,7 +63,7 @@ const CartPage = ({ setPage, toast }) => {
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {cart.map(item=>(
               <div key={`${item._id}-${item.size}-${item.color}`} style={{background:"#fff",borderRadius:"20px",border:"1.5px solid var(--border)",padding:isMobile?14:20,display:"flex",gap:isMobile?12:16,alignItems:"flex-start",boxShadow:"0 4px 24px rgba(194,24,91,0.08)"}}>
-                <img src={thumb(item)} alt={item.name} style={{width:isMobile?72:90,height:isMobile?88:110,objectFit:"cover",borderRadius:12,flexShrink:0}}/>
+                <img src={thumb(item)} alt={item.name} style={{width:isMobile?72:90,height:isMobile?88:110,objectFit:"contain",background:"var(--ivory2)",borderRadius:12,flexShrink:0}}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:10,fontWeight:700,background:`linear-gradient(135deg,var(--rose),var(--saffron))`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:3,letterSpacing:.5}}>{item.category}</div>
                   <div style={{fontFamily:"var(--font-d)",fontWeight:700,color:"var(--text)",fontSize:isMobile?14:16,marginBottom:4,lineHeight:1.3}}>{item.name}</div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useBreakpoint } from "../hooks";
 import { useCatConfig, updateGlobalCat } from "../store/catStore";
 import { Ic } from "../utils/helpers";
-import { Trash2, Upload, Layers } from "lucide-react";
+import { Edit, Image, Layers, Trash2, Upload } from "lucide-react";
 
 const GRAD_PRESETS = [
   "linear-gradient(135deg,#C2185B,#E91E8C)","linear-gradient(135deg,#6A1B9A,#AB47BC)",

@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { Ic, fmt, thumb } from "../utils/helpers";
 import { apiCreatePayment, apiCreateOrder, apiValidateCoupon } from "../api";
-import { Lock, MapPin, CreditCard, CheckCircle, Tag } from "lucide-react";
+import { AlertTriangle, CheckCircle, CreditCard, Lock, MapPin, Phone, Tag } from "lucide-react";
 
 /* ── CHECKOUT ────────────────────────────────────────────────────────────────── */
 const CheckoutPage = ({ setPage, toast }) => {
@@ -123,7 +123,7 @@ const CheckoutPage = ({ setPage, toast }) => {
                 <h3 style={{fontFamily:"var(--font-d)",color:"var(--dark)",margin:"0 0 20px",fontSize:20,fontWeight:700}}>Review Order</h3>
                 {cart.map((item,i)=>(
                   <div key={i} style={{display:"flex",gap:14,alignItems:"center",padding:"12px 0",borderBottom:"1px solid var(--border)"}}>
-                    <img src={thumb(item)} alt={item.name} style={{width:52,height:64,objectFit:"cover",borderRadius:10}}/>
+                    <img src={thumb(item)} alt={item.name} style={{width:52,height:64,objectFit:"contain",background:"var(--ivory2)",borderRadius:10}}/>
                     <div style={{flex:1}}>
                       <div style={{fontFamily:"var(--font-d)",fontWeight:700,color:"var(--text)",fontSize:14}}>{item.name}</div>
                       <div style={{fontSize:11,color:"var(--muted)",marginTop:2,fontWeight:500}}>{item.color} · {item.size} · Qty {item.qty}</div>

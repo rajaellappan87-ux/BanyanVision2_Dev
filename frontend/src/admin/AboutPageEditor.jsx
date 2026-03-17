@@ -3,7 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { useAboutData, updateAbout } from "../store/contentStore";
 import { DEFAULT_ABOUT } from "../constants/defaults";
 import { Ic } from "../utils/helpers";
-import { Trash2 } from "lucide-react";
+import { Edit, Save, Trash2 } from "lucide-react";
 
 /* ── ABOUT PAGE EDITOR ───────────────────────────────────────────────────────── */
 const AboutPageEditor = ({ toast }) => {

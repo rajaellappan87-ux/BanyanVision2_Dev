@@ -1,7 +1,7 @@
 import React from "react";
 import { useBreakpoint } from "../hooks";
 import { Ic } from "../utils/helpers";
-import { Scissors } from "lucide-react";
+import { Home, Scissors } from "lucide-react";
 
 /* ── 404 NOT FOUND PAGE ──────────────────────────────────────────────────────── */
 const NotFoundPage = ({ setPage }) => {

@@ -6,7 +6,7 @@ import { useCatConfig } from "../store/catStore";
 import { Ic, fmt, disc, thumb, COLORS_MAP, printShippingLabel } from "../utils/helpers";
 import { apiGetProduct, apiCreateReview, apiMarkHelpful, apiToggleWishlist, apiGetWishlist } from "../api";
 import Gallery from "../components/ui/Gallery";
-import { Heart, Star, Check, Lock, Truck, RefreshCw, Zap, ShoppingCart, Package } from "lucide-react";
+import { Check, Heart, Home, Lock, Package, RefreshCw, Save, ShoppingCart, Star, TrendingUp, Truck, Zap } from "lucide-react";
 import { Stars, Spinner } from "../components/ui/Common";
 
 /* ── PRODUCT DETAIL ──────────────────────────────────────────────────────────── */

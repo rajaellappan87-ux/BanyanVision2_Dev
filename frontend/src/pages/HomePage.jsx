@@ -75,7 +75,7 @@ const HomePage = ({ setPage, toast }) => {
                   onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.04) rotate(-.8deg)";e.currentTarget.style.boxShadow="0 16px 48px rgba(194,24,91,.2)";e.currentTarget.style.borderColor="var(--rose)";}}
                   onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";e.currentTarget.style.borderColor="var(--border)";}}>
                   {p?.images?.[0]
-                    ?<img src={p.images[0].url} alt={p.name} loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    ?<img src={p.images[0].url} alt={p.name} loading="lazy" style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"center",background:"var(--ivory2)"}}/>
                     :<div style={{height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--rose)",fontFamily:"var(--font-d)",fontSize:13,fontWeight:600}}>{p?.name||"Loading…"}</div>
                   }
                   {p&&<div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px 14px 14px",background:"linear-gradient(to top,rgba(26,10,0,.85),transparent)"}}>

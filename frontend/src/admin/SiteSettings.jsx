@@ -3,8 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { _settings, updateSettings } from "../store/contentStore";
 import { DEFAULT_SETTINGS } from "../constants/defaults";
 import { Ic } from "../utils/helpers";
-import { Save, Phone, Warehouse, Globe, Eye, Upload,
-         Instagram, Facebook, Youtube, Twitter } from "lucide-react";
+import { Eye, Facebook, Globe, Instagram, Phone, Save, Settings, Twitter, Upload, Warehouse, X, Youtube } from "lucide-react";
 
 /* ── SITE SETTINGS ───────────────────────────────────────────────────────────── */
 const SiteSettings = ({ toast }) => {

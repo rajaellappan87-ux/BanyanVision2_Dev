@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useBreakpoint } from "../hooks";
 import { Ic, fmt } from "../utils/helpers";
 import { apiGetMyOrders } from "../api";
-import { Package, Clock, Truck, CheckCircle, XCircle, ShoppingBag } from "lucide-react";
+import { CheckCircle, Clock, Package, Settings, ShoppingBag, Truck, XCircle } from "lucide-react";
 import { Spinner } from "../components/ui/Common";
 
 const OrdersPage = ({ setPage }) => {
@@ -61,7 +61,7 @@ const OrdersPage = ({ setPage }) => {
               <div style={{padding:isMobile?"12px 16px":"14px 22px",display:"flex",flexWrap:"wrap",gap:14,borderBottom:"1px solid var(--border)"}}>
                 {ord.items.map((item,i)=>(
                   <div key={i} style={{display:"flex",alignItems:"center",gap:10}}>
-                    <img src={item.image||`https://placehold.co/44x54/FDF8F3/C2185B?text=P`} alt={item.name} loading="lazy" style={{width:44,height:54,objectFit:"cover",borderRadius:10,boxShadow:"0 2px 8px rgba(0,0,0,.08)"}}/>
+                    <img src={item.image||`https://placehold.co/44x54/FDF8F3/C2185B?text=P`} alt={item.name} loading="lazy" style={{width:44,height:54,objectFit:"contain",background:"var(--ivory2)",borderRadius:10,boxShadow:"0 2px 8px rgba(0,0,0,.08)"}}/>
                     <div>
                       <div style={{fontSize:13,fontWeight:700,color:"var(--text)"}}>{item.name}</div>
                       <div style={{fontSize:11,color:"var(--muted)",marginTop:2,fontWeight:500}}>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Ic } from "../../utils/helpers";
-import { Crop, ZoomIn, Scissors, Upload, X } from "lucide-react";
+import { Crop, Image, Scissors, Upload, X, ZoomIn } from "lucide-react";
 
 /* ── Image Cropper Modal ─────────────────────────────────────────────────────── */
 const CROP_W = 900;
