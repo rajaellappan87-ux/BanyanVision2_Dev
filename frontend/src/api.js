@@ -69,3 +69,7 @@ export const apiAdminDeleteUser   = (id)         => API.delete(`/admin/users/${i
 // ── Inventory ─────────────────────────────────────────────────────────────────
 export const apiAdminInventory      = ()              => API.get("/admin/inventory");
 export const apiAdminStockUpdate    = (id, data)      => API.patch(`/admin/inventory/${id}`, data);
+
+// ── Orders (admin extra) ──────────────────────────────────────────────────────
+export const apiDeleteOrder       = (id)   => API.delete(`/orders/${id}`);
+export const apiExportOrdersEmail = (data) => API.post("/orders/export-email", data);

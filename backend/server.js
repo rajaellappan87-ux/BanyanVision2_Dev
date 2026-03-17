@@ -1,10 +1,13 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
-const express   = require("express");
-const mongoose  = require("mongoose");
-const cors      = require("cors");
-const morgan    = require("morgan");
+const express      = require("express");
+const mongoose     = require("mongoose");
+const cors         = require("cors");
+const morgan       = require("morgan");
+const helmet       = require("helmet");
+const compression  = require("compression");
+const rateLimit    = require("express-rate-limit");
 
 // Using path.join(__dirname, ...) ensures modules resolve correctly
 // regardless of which directory you run `node` from
@@ -14,7 +17,19 @@ const { User, Product, Coupon } = require(path.join(__dirname, "models"));
 
 const app = express();
 
-// ─── Middleware ───────────────────────────────────────────────────────────────
+// ─── Security & Performance Middleware ───────────────────────────────────────
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(compression());
+
+// Rate limiting — 100 requests per 15 min per IP
+const limiter = rateLimit({ windowMs: 15*60*1000, max: 100, message: { success:false, message:"Too many requests. Please try again later." } });
+// Stricter limit for auth routes — 10 attempts per 15 min
+const authLimiter = rateLimit({ windowMs: 15*60*1000, max: 10, message: { success:false, message:"Too many login attempts. Please try again later." } });
+
+app.use("/api/auth", authLimiter);
+app.use("/api", limiter);
+
+// ─── CORS ─────────────────────────────────────────────────────────────────────
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
@@ -45,7 +60,10 @@ app.use("/api/wishlist", wishlistRouter);
 app.use("/api/coupons",  couponRouter);
 app.use("/api/admin",    adminRouter);
 
-app.get("/api/health", (_, res) => res.json({ status: "ok", timestamp: new Date() }));
+app.get("/api/health", (_, res) => res.json({ status: "ok", timestamp: new Date(), version: "1.0.0" }));
+
+// Security: hide powered-by
+app.disable("x-powered-by");
 
 // ─── Error handler ────────────────────────────────────────────────────────────
 app.use(errorHandler);

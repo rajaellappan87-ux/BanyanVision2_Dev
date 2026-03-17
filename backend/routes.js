@@ -6,6 +6,8 @@ const { body, validationResult } = require("express-validator");
 const path = require("path");
 const { User, Product, Review, Order, Coupon } = require(path.join(__dirname, "models"));
 const { protect, adminOnly, upload, cloudinary } = require(path.join(__dirname, "middleware"));
+const { sendOrderConfirmation, sendStatusUpdate, sendThankYou, sendSafe } = require(path.join(__dirname, "mailer"));
+const { sendReviewAck } = require(path.join(__dirname, "mailer"));
 
 const router = express.Router();
 
@@ -176,6 +178,10 @@ reviewRouter.post("/", protect, [body("rating").isInt({ min:1, max:5 }), body("c
     const avg = allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length;
     await Product.findByIdAndUpdate(productId, { rating: avg.toFixed(1), numReviews: allReviews.length });
 
+    // Send review acknowledgement to customer + notify admin
+    const product = await Product.findById(productId).select("name images");
+    sendSafe(sendReviewAck, { user: req.user, product, review });
+
     res.status(201).json({ success: true, review });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
@@ -233,6 +239,9 @@ orderRouter.post("/", protect, async (req, res) => {
       await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.qty } });
     }
 
+    // Send order confirmation email to customer + admin
+    sendSafe(sendOrderConfirmation, { order, user: req.user });
+
     res.status(201).json({ success: true, order });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
@@ -245,18 +254,51 @@ orderRouter.get("/my", protect, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-// GET /api/orders  (admin)
+// GET /api/orders  (admin) — with optional status filter
 orderRouter.get("/", protect, adminOnly, async (req, res) => {
   try {
-    const orders = await Order.find().populate("user", "name email").sort({ createdAt: -1 });
+    const filter = {};
+    if (req.query.status && req.query.status !== "all") filter.status = req.query.status;
+    const orders = await Order.find(filter).populate("user", "name email").sort({ createdAt: -1 });
     res.json({ success: true, orders });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// DELETE /api/orders/:id  (admin)
+orderRouter.delete("/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    await order.deleteOne();
+    res.json({ success: true, message: "Order deleted" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// POST /api/orders/export-email  (admin) — send CSV to admin email
+orderRouter.post("/export-email", protect, adminOnly, async (req, res) => {
+  try {
+    const { statusFilter = "all" } = req.body;
+    const { sendOrdersExportEmail } = require(path.join(__dirname, "mailer"));
+    const filter = statusFilter !== "all" ? { status: statusFilter } : {};
+    const orders = await Order.find(filter).populate("user","name email").sort({ createdAt: -1 });
+    await sendOrdersExportEmail({ orders, statusFilter, adminEmail: process.env.ADMIN_EMAIL || "admin@banyanvision.com" });
+    res.json({ success: true, message: `Export email sent with ${orders.length} orders` });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
 // PUT /api/orders/:id/status  (admin)
 orderRouter.put("/:id/status", protect, adminOnly, async (req, res) => {
   try {
-    const order = await Order.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+    const newStatus = req.body.status;
+    const order = await Order.findByIdAndUpdate(req.params.id, { status: newStatus }, { new: true }).populate("user", "name email");
+    // Send status update email to customer
+    if (order.user && order.user.email) {
+      sendSafe(sendStatusUpdate, { order, user: order.user, newStatus });
+      // Extra thank-you email on delivery
+      if (newStatus === "delivered") {
+        setTimeout(() => sendSafe(sendThankYou, { order, user: order.user }), 5000);
+      }
+    }
     res.json({ success: true, order });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
