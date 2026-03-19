@@ -98,10 +98,37 @@ const HomePage = ({ setPage, toast }) => {
       </section>
 
       {/* ─ CRAFT STRIP ─ */}
-      <div style={{background:"linear-gradient(90deg,var(--rose),var(--saffron),var(--purple),var(--rose))",backgroundSize:"300% 100%",animation:"shimmer 6s linear infinite",padding:"13px 0",overflow:"hidden"}}>
-        <div style={{display:"flex",animation:"marquee 26s linear infinite",whiteSpace:"nowrap",width:"max-content"}}>
-          {Array(8).fill("✦ BANARASI SILK   ✦  BLOCK PRINT   ✦  HAND EMBROIDERY   ✦  ZARDOZI   ✦  PATOLA   ✦  KUNDAN   ✦  MIRROR WORK   ✦  KALAMKARI   ").map((t,i)=>(
-            <span key={i} style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.9)",paddingRight:40,letterSpacing:2}}>{t}</span>
+      <div style={{background:"linear-gradient(90deg,var(--rose),var(--saffron),var(--purple),var(--rose))",
+                   backgroundSize:"300% 100%",animation:"shimmer 6s linear infinite",
+                   padding:"13px 0",overflow:"hidden",position:"relative"}}>
+        <div className="bv-marquee-track">
+          {[0,1].map(copy=>(
+            <span key={copy} style={{display:"inline-flex",alignItems:"center",flexShrink:0}}>
+              {[
+                "FREE SHIPPING ABOVE ₹2000",
+                "WELCOME20 — 20% OFF FIRST ORDER",
+                "BANARASI SILK SAREES",
+                "BLOCK PRINT KURTAS",
+                "HAND EMBROIDERY",
+                "ZARDOZI WORK",
+                "PATOLA SAREES",
+                "KUNDAN JEWELLERY",
+                "MIRROR WORK",
+                "KALAMKARI ART",
+                "BRIDAL COLLECTION NOW LIVE",
+                "CRAFTED BY MASTER ARTISANS",
+              ].map((t,i)=>(
+                <span key={i} style={{
+                  fontSize:11,fontWeight:700,
+                  color:"rgba(255,255,255,.95)",
+                  padding:"0 24px",
+                  letterSpacing:1.5,
+                  whiteSpace:"nowrap",
+                }}>
+                  ✦ {t}
+                </span>
+              ))}
+            </span>
           ))}
         </div>
       </div>

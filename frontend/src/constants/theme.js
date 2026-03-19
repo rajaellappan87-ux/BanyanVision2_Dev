@@ -38,4 +38,49 @@ export const GLOBAL_CSS = `
   .card-hover:hover{transform:translateY(-8px);box-shadow:0 20px 60px rgba(26,10,0,0.15);border-color:var(--rose)}
   .tag{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.3px}
   input:focus,select:focus,textarea:focus{outline:none!important;border-color:var(--rose)!important;box-shadow:0 0 0 3px rgba(194,24,91,0.12)!important}
+
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .bv-marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 32s linear infinite;
+    will-change: transform;
+  }
+  .bv-marquee-track:hover {
+    animation-play-state: paused;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-8px); }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes waFloat {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-6px); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .6; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(.95); }
+    to   { opacity: 1; transform: scale(1); }
+  }
 `;
