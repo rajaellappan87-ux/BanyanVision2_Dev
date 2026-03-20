@@ -23,7 +23,7 @@ const AdminInventory = ({ toast }) => {
     setLoading(true);
     try {
       const r = await apiAdminInventory();
-      setProducts(r.data.products);
+      setProducts(Array.isArray(r?.data?.products)?r.data.products:[]);
     } catch { toast("Failed to load inventory","error"); }
     setLoading(false);
   };

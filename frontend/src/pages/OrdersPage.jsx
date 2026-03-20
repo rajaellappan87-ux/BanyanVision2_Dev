@@ -9,7 +9,7 @@ const OrdersPage = ({ setPage }) => {
   const {isMobile}=useBreakpoint();
   const [orders,setOrders]=useState([]);
   const [loading,setLoading]=useState(true);
-  useEffect(()=>{apiGetMyOrders().then(r=>setOrders(r.data.orders)).catch(console.error).finally(()=>setLoading(false));},[]);
+  useEffect(()=>{apiGetMyOrders().then(r=>setOrders(Array.isArray(r?.data?.orders)?r.data.orders:[])).catch(console.error).finally(()=>setLoading(false));},[]);
 
   // Status config — label, colour, icon, step number
   const STEPS=["pending","processing","shipped","delivered"];

@@ -11,7 +11,7 @@ const WishlistPage = ({ setPage, toast }) => {
   const {isMobile}=useBreakpoint();
   const [prods,setProds]=useState([]);
   const [loading,setLoading]=useState(true);
-  useEffect(()=>{apiGetWishlist().then(r=>setProds(r.data.wishlist)).catch(console.error).finally(()=>setLoading(false));},[]);
+  useEffect(()=>{apiGetWishlist().then(r=>setProds(Array.isArray(r?.data?.wishlist)?r.data.wishlist:[])).catch(console.error).finally(()=>setLoading(false));},[]);
   return(
     <div style={{background:"var(--ivory)",minHeight:"100vh",padding:isMobile?"20px 16px":"44px 80px"}}>
       <div style={{maxWidth:1200,margin:"0 auto"}}>

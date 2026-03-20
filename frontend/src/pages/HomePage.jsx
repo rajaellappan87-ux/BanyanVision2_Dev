@@ -19,8 +19,12 @@ const HomePage = ({ setPage, toast }) => {
 
   useEffect(()=>{
     Promise.all([apiGetProducts({featured:true,limit:4}),apiGetProducts({trending:true,limit:4})])
-      .then(([f,t])=>{setFeatured(f.data.products);setTrending(t.data.products);})
-      .catch(console.error).finally(()=>setLoading(false));
+      .then(([f,t])=>{
+        setFeatured(Array.isArray(f?.data?.products) ? f.data.products : []);
+        setTrending(Array.isArray(t?.data?.products) ? t.data.products : []);
+      })
+      .catch(()=>{ setFeatured([]); setTrending([]); })
+      .finally(()=>setLoading(false));
   },[]);
 
   return (

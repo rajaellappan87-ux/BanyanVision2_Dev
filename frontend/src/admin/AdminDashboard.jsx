@@ -43,7 +43,7 @@ const AdminDashboard = ({ setPage, toast }) => {
   const reload=useCallback(()=>{
     setLoading(true);
     Promise.all([apiAdminStats(),apiGetAllOrders(),apiGetProducts({limit:50}),apiAdminUsers(),apiGetCoupons()])
-      .then(([s,o,p,u,c])=>{setStats(s.data.stats);setOrders(o.data.orders);setProducts(p.data.products);setUsers(u.data.users);setCoupons(c.data.coupons);})
+      .then(([s,o,p,u,c])=>{setStats(s?.data?.stats||{});setOrders(Array.isArray(o?.data?.orders)?o.data.orders:[]);setProducts(Array.isArray(p?.data?.products)?p.data.products:[]);setUsers(Array.isArray(u?.data?.users)?u.data.users:[]);setCoupons(Array.isArray(c?.data?.coupons)?c.data.coupons:[]);})
       .catch(console.error).finally(()=>setLoading(false));
   },[]);
 
@@ -58,7 +58,7 @@ const AdminDashboard = ({ setPage, toast }) => {
       pFiles.forEach(f=>fd.append("images",f));
       if(editId){await apiUpdateProduct(editId,fd);toast("Product updated!");}
       else{await apiCreateProduct(fd);toast("Product created!");}
-      const r=await apiGetProducts({limit:50});setProducts(r.data.products);resetP();
+      const r=await apiGetProducts({limit:50});setProducts(Array.isArray(r?.data?.products)?r.data.products:[]);resetP();
     }catch(err){toast(err.response?.data?.message||"Save failed","error");}
     setSaving(false);
   };

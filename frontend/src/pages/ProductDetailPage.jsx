@@ -27,7 +27,7 @@ const ProductDetailPage = ({ productId, setPage, toast }) => {
 
   useEffect(()=>{
     setLoading(true);
-    apiGetProduct(productId).then(r=>{setData(r.data.product);setRevs(r.data.reviews);setSelColor(r.data.product.colors?.[0]||"");setSelSize(r.data.product.sizes?.[0]||"");}).catch(console.error).finally(()=>setLoading(false));
+    apiGetProduct(productId).then(r=>{setData(r?.data?.product||null);setRevs(Array.isArray(r?.data?.reviews)?r.data.reviews:[]); setSelColor(r.data.product.colors?.[0]||"");setSelSize(r.data.product.sizes?.[0]||"");}).catch(console.error).finally(()=>setLoading(false));
     if(user)apiGetWishlist().then(r=>setWished(r.data.wishlist.some(w=>(w._id||w)===productId))).catch(()=>{});
   },[productId,user]);
 
