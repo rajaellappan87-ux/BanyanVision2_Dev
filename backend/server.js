@@ -11,7 +11,7 @@ const rateLimit    = require("express-rate-limit");
 
 // Using path.join(__dirname, ...) ensures modules resolve correctly
 // regardless of which directory you run `node` from
-const { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter } = require(path.join(__dirname, "routes"));
+const { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter, configRouter } = require(path.join(__dirname, "routes"));
 const { errorHandler } = require(path.join(__dirname, "middleware"));
 const { User, Product, Coupon } = require(path.join(__dirname, "models"));
 
@@ -59,6 +59,7 @@ app.use("/api/orders",   orderRouter);
 app.use("/api/wishlist", wishlistRouter);
 app.use("/api/coupons",  couponRouter);
 app.use("/api/admin",    adminRouter);
+app.use("/api/config",   configRouter);
 
 app.get("/api/health", (_, res) => res.json({ status: "ok", timestamp: new Date(), version: "1.0.0" }));
 

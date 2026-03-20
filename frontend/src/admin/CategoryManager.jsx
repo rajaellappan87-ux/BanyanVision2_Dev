@@ -44,7 +44,7 @@ const CategoryManager = ({ toast }) => {
 
   useEffect(()=>{setCfg(JSON.parse(JSON.stringify(liveCat)));},[liveCat]);
 
-  const save=(newCfg)=>{updateGlobalCat(newCfg);setCfg({...newCfg});toast("Saved! Changes applied site-wide.");};
+  const save=async(newCfg)=>{try{await updateGlobalCat(newCfg);setCfg({...newCfg});toast("Saved! Changes applied site-wide.");}catch(e){toast("Save failed","error");}};
 
   const addCat=()=>{
     const n=newName.trim();

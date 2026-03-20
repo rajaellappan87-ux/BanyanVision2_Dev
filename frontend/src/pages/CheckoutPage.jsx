@@ -51,26 +51,77 @@ const CheckoutPage = ({ setPage, toast }) => {
   const pay=async()=>{
     setProcessing(true);
     try{
+      // Step 1: Load Razorpay checkout script
       const ok=await loadRz();
-      if(!ok){toast("Razorpay load failed","error");setProcessing(false);return;}
-      const pr=await apiCreatePayment({total});
+      if(!ok){ toast("Could not load payment gateway. Check your internet connection.","error"); setProcessing(false); return; }
+
+      // Step 2: Create Razorpay order on backend
+      let pr;
+      try{
+        pr=await apiCreatePayment({total});
+      }catch(apiErr){
+        const msg=apiErr.response?.data?.message||"Payment gateway error";
+        console.error("create-payment failed:",apiErr.response?.data||apiErr.message);
+        toast(msg,"error");
+        setProcessing(false);
+        return;
+      }
+
       const {orderId,amount,currency,keyId}=pr.data;
+
+      // Step 3: Validate key before opening modal
+      if(!keyId||!keyId.startsWith("rzp_")){
+        toast("Payment gateway misconfigured — contact support","error");
+        setProcessing(false);
+        return;
+      }
+
+      // Step 4: Open Razorpay modal
       const opts={
-        key:keyId,amount,currency,name:"BanyanVision",order_id:orderId,
+        key:keyId,
+        amount,
+        currency,
+        name:"BanyanVision",
+        description:"Handcrafted Indian Fashion",
+        order_id:orderId,
         handler:async res=>{
           try{
-            const or=await apiCreateOrder({items:cart.map(i=>({product:i._id,name:i.name,image:thumb(i),price:i.price,qty:i.qty,size:i.size,color:i.color,category:i.category})),shippingAddress:{fullName:form.name,phone:form.phone,address:form.address,city:form.city,state:form.state,pin:form.pin},subtotal,discount:discountAmt,shipping,total,coupon:couponCode||null,paymentId:res.razorpay_payment_id,paymentOrderId:res.razorpay_order_id,paymentSignature:res.razorpay_signature});
-            clearCart();setPage(`order-success-${or.data.order._id}`);
-          }catch(err){toast(err.response?.data?.message||"Order failed","error");}
+            const or=await apiCreateOrder({
+              items:cart.map(i=>({product:i._id,name:i.name,image:thumb(i.images?.[0]?.url||i.image||""),price:i.price,qty:i.qty,size:i.size,color:i.color,category:i.category})),
+              shippingAddress:{fullName:form.name,phone:form.phone,address:form.address,city:form.city,state:form.state,pin:form.pin},
+              subtotal,discount:discountAmt,shipping,total,coupon:couponCode||null,
+              paymentId:res.razorpay_payment_id,
+              paymentOrderId:res.razorpay_order_id,
+              paymentSignature:res.razorpay_signature,
+            });
+            clearCart();
+            setPage(`order-success-${or.data.order._id}`);
+          }catch(err){
+            console.error("Order creation failed:",err.response?.data||err.message);
+            toast(err.response?.data?.message||"Order creation failed — contact support","error");
+          }
         },
         prefill:{name:form.name,email:form.email,contact:form.phone},
         theme:{color:"#C2185B"},
-        modal:{ondismiss:()=>setProcessing(false)},
+        modal:{
+          ondismiss:()=>{ setProcessing(false); },
+          confirm_close:true,
+        },
       };
+
       const rzp=new window.Razorpay(opts);
-      rzp.on("payment.failed",()=>{toast("Payment failed","error");setProcessing(false);});
+      rzp.on("payment.failed",(response)=>{
+        console.error("Razorpay payment.failed:",response.error);
+        toast(response.error?.description||"Payment failed — please try again","error");
+        setProcessing(false);
+      });
       rzp.open();
-    }catch(err){toast(err.response?.data?.message||"Payment failed","error");setProcessing(false);}
+
+    }catch(err){
+      console.error("pay() unhandled error:",err);
+      toast(err.response?.data?.message||"Something went wrong — please try again","error");
+      setProcessing(false);
+    }
   };
 
   const iStyle={background:"#fff",border:"1.5px solid var(--border2)",color:"var(--text)",padding:"12px 14px",fontSize:13,borderRadius:12,outline:"none",width:"100%",boxSizing:"border-box",fontWeight:500};
@@ -123,7 +174,7 @@ const CheckoutPage = ({ setPage, toast }) => {
                 <h3 style={{fontFamily:"var(--font-d)",color:"var(--dark)",margin:"0 0 20px",fontSize:20,fontWeight:700}}>Review Order</h3>
                 {cart.map((item,i)=>(
                   <div key={i} style={{display:"flex",gap:14,alignItems:"center",padding:"12px 0",borderBottom:"1px solid var(--border)"}}>
-                    <img src={thumb(item)} alt={item.name} style={{width:52,height:64,objectFit:"contain",background:"var(--ivory2)",borderRadius:10}}/>
+                    <img src={thumb(item.images?.[0]?.url||item.image||"")} alt={item.name} style={{width:52,height:64,objectFit:"contain",background:"var(--ivory2)",borderRadius:10}}/>
                     <div style={{flex:1}}>
                       <div style={{fontFamily:"var(--font-d)",fontWeight:700,color:"var(--text)",fontSize:14}}>{item.name}</div>
                       <div style={{fontSize:11,color:"var(--muted)",marginTop:2,fontWeight:500}}>{item.color} · {item.size} · Qty {item.qty}</div>

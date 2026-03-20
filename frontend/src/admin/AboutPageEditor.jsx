@@ -17,11 +17,13 @@ const AboutPageEditor = ({ toast }) => {
 
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
 
-  const save=()=>{
-    updateAbout({...form});
-    setSaved(true);
-    toast("About page updated! Changes are live.");
-    setTimeout(()=>setSaved(false),2500);
+  const save=async()=>{
+    try{
+      await updateAbout({...form});
+      setSaved(true);
+      toast("About page updated! Changes are live.");
+      setTimeout(()=>setSaved(false),2500);
+    }catch(e){toast("Save failed — please try again","error");}
   };
 
   const reset=()=>{

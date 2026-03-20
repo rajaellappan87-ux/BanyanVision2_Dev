@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useBreakpoint } from "../hooks";
-import { _settings, updateSettings } from "../store/contentStore";
+import { useSettings, updateSettings } from "../store/contentStore";
 import { DEFAULT_SETTINGS } from "../constants/defaults";
 import { Ic } from "../utils/helpers";
 import { Eye, Facebook, Globe, Instagram, Phone, Save, Settings, Twitter, Upload, Warehouse, X, Youtube } from "lucide-react";
@@ -8,21 +8,29 @@ import { Eye, Facebook, Globe, Instagram, Phone, Save, Settings, Twitter, Upload
 /* ── SITE SETTINGS ───────────────────────────────────────────────────────────── */
 const SiteSettings = ({ toast }) => {
   const {isMobile} = useBreakpoint();
-  const [form, setForm] = useState({..._settings});
+  const st = useSettings(); // loads from DB on mount
+  const [form, setForm] = useState({...st});
+
+  // Sync form whenever DB data loads (first open after cold start)
+  React.useEffect(() => { setForm({...st}); }, [JSON.stringify(st)]);
   const [saved, setSaved] = useState(false);
 
   const setVal = (k,v) => setForm(f => ({...f,[k]:v}));
 
-  const save = () => {
-    updateSettings({...form});
-    setSaved(true);
-    toast("Site settings saved! Changes are live ✓");
-    setTimeout(() => setSaved(false), 3000);
+  const save = async () => {
+    try {
+      await updateSettings({...form});
+      setSaved(true);
+      toast("Site settings saved! Changes are live ✓");
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      toast("Save failed — please try again", "error");
+    }
   };
 
-  const reset = () => {
+  const reset = async () => {
     setForm({...DEFAULT_SETTINGS});
-    updateSettings({...DEFAULT_SETTINGS});
+    await updateSettings({...DEFAULT_SETTINGS});
     toast("Settings reset to defaults");
   };
 

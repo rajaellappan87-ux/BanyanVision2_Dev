@@ -77,3 +77,7 @@ export const apiAdminDeleteUser = (id)        => API.delete(`/admin/users/${id}`
 // ── Inventory ─────────────────────────────────────────────────────────────────
 export const apiAdminInventory   = ()         => API.get("/admin/inventory");
 export const apiAdminStockUpdate = (id, data) => API.patch(`/admin/inventory/${id}`, data);
+
+// ── Site Config (saved permanently in MongoDB) ────────────────────────────────
+export const apiGetConfig    = (key)         => API.get(`/config/${key}`);
+export const apiSaveConfig   = (key, value)  => API.put(`/config/${key}`, { value });

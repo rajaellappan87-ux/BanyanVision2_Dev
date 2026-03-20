@@ -16,11 +16,13 @@ const PromoBannerEditor = ({ toast }) => {
 
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
 
-  const save=()=>{
-    updatePromo({...form});
-    setSaved(true);
-    toast("Offer banner updated! Changes are live on the homepage.");
-    setTimeout(()=>setSaved(false),2500);
+  const save=async()=>{
+    try{
+      await updatePromo({...form});
+      setSaved(true);
+      toast("Offer banner updated! Changes are live on the homepage.");
+      setTimeout(()=>setSaved(false),2500);
+    }catch(e){toast("Save failed — please try again","error");}
   };
 
   const reset=()=>{
