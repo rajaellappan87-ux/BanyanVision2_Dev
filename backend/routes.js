@@ -198,20 +198,80 @@ reviewRouter.put("/:id/helpful", protect, async (req, res) => {
 // ORDER ROUTES  /api/orders
 // ════════════════════════════════════════════════════════════
 const orderRouter = express.Router();
-const razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
+// Create a fresh Razorpay instance per-request so env var changes take effect immediately
+const getRazorpay = () => {
+  const keyId     = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) throw new Error("Razorpay keys not configured in environment variables");
+  if (!keyId.startsWith("rzp_")) throw new Error(`Invalid Razorpay key format: ${keyId.substring(0,8)}...`);
+  return new Razorpay({ key_id: keyId, key_secret: keySecret });
+};
 
 // POST /api/orders/create-payment  — create Razorpay order
 orderRouter.post("/create-payment", protect, async (req, res) => {
   try {
     const { total } = req.body;
+    if (!total || total <= 0) return res.status(400).json({ success: false, message: "Invalid order amount" });
+
+    // Validate Razorpay keys are set
+    const keyId     = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret)     return res.status(500).json({ success: false, message: "Payment gateway not configured" });
+    if (!keyId.startsWith("rzp_")) return res.status(500).json({ success: false, message: "Invalid Razorpay key format" });
+
     const options = {
-      amount: Math.round(total * 100), // paise
+      amount:   Math.round(total * 100), // convert rupees → paise
       currency: "INR",
-      receipt: `receipt_${Date.now()}`,
+      receipt:  `bv_${Date.now()}`,
     };
-    const razorpayOrder = await razorpay.orders.create(options);
-    res.json({ success: true, orderId: razorpayOrder.id, amount: razorpayOrder.amount, currency: razorpayOrder.currency, keyId: process.env.RAZORPAY_KEY_ID });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+    const rzpOrder = await getRazorpay().orders.create(options);
+    res.json({
+      success:  true,
+      orderId:  rzpOrder.id,
+      amount:   rzpOrder.amount,
+      currency: rzpOrder.currency,
+      keyId,    // send key to frontend (public key — safe to expose)
+    });
+  } catch (err) {
+    console.error("Razorpay create-payment error:", err.message);
+    res.status(500).json({ success: false, message: err.error?.description || err.message });
+  }
+});
+
+
+// GET /api/orders/payment-check  — admin diagnostic to verify Razorpay keys
+orderRouter.get("/payment-check", protect, adminOnly, async (req, res) => {
+  const keyId     = process.env.RAZORPAY_KEY_ID || "";
+  const keySecret = process.env.RAZORPAY_KEY_SECRET || "";
+  const isLive    = keyId.startsWith("rzp_live_");
+  const isTest    = keyId.startsWith("rzp_test_");
+  const valid     = isLive || isTest;
+
+  // Try creating a dummy ₹1 order to verify keys actually work
+  let apiOk = false;
+  let apiError = null;
+  if (valid) {
+    try {
+      const rzp = getRazorpay();
+      await rzp.orders.create({ amount: 100, currency: "INR", receipt: "check" });
+      apiOk = true;
+    } catch (e) {
+      apiError = e.error?.description || e.message;
+    }
+  }
+
+  res.json({
+    keyId:    keyId ? `${keyId.substring(0, 14)}...` : "NOT SET",
+    keySecret:keySecret ? `${keySecret.substring(0, 6)}...` : "NOT SET",
+    mode:     isLive ? "LIVE" : isTest ? "TEST" : "INVALID",
+    valid,
+    apiOk,
+    apiError,
+    message:  !valid         ? "Keys not set or invalid format (must start with rzp_live_ or rzp_test_)"
+            : !apiOk         ? `Keys set but API call failed: ${apiError}`
+            : isLive         ? "✅ Live mode — real payments enabled"
+            :                  "✅ Test mode — use test cards",
+  });
 });
 
 // POST /api/orders  — verify payment and create order
@@ -475,4 +535,35 @@ adminRouter.delete("/users/:id", async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-module.exports = { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter };
+
+// ─── Site Config Router ───────────────────────────────────────────────────────
+const { SiteConfig } = require("./models");
+const configRouter = express.Router();
+
+// GET /api/config/:key — public read
+configRouter.get("/:key", async (req, res) => {
+  try {
+    const doc = await SiteConfig.findOne({ key: req.params.key });
+    res.json({ value: doc ? doc.value : null });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+// PUT /api/config/:key — admin only write
+configRouter.put("/:key", protect, adminOnly, async (req, res) => {
+  try {
+    const { value } = req.body;
+    if (value === undefined) return res.status(400).json({ message: "value required" });
+    const doc = await SiteConfig.findOneAndUpdate(
+      { key: req.params.key },
+      { key: req.params.key, value },
+      { upsert: true, new: true, runValidators: true }
+    );
+    res.json({ value: doc.value });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+module.exports = { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter, configRouter };

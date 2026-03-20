@@ -107,3 +107,13 @@ module.exports = {
   Order:   mongoose.model("Order",   orderSchema),
   Coupon:  mongoose.model("Coupon",  couponSchema),
 };
+
+// ─── models/SiteConfig.js ─────────────────────────────────────────────────────
+// Single-document store for all admin-editable site configuration.
+// Uses key-based singleton pattern: only one document per key.
+const siteConfigSchema = new mongoose.Schema({
+  key:   { type: String, required: true, unique: true }, // e.g. "settings", "promo", "about", "categories"
+  value: { type: mongoose.Schema.Types.Mixed, required: true },
+}, { timestamps: true });
+
+module.exports.SiteConfig = mongoose.model("SiteConfig", siteConfigSchema);
