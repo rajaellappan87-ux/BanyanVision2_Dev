@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { Ic, fmt, thumb } from "../utils/helpers";
 import { apiCreatePayment, apiCreateOrder, apiValidateCoupon } from "../api";
-import { AlertTriangle, CheckCircle, CreditCard, Lock, MapPin, Phone, Tag } from "lucide-react";
+import { AlertTriangle, MapPin, Phone } from "lucide-react";
 
 /* ── CHECKOUT ────────────────────────────────────────────────────────────────── */
 const CheckoutPage = ({ setPage, toast }) => {

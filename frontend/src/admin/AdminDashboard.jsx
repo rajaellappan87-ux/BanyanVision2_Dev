@@ -18,7 +18,7 @@ import CategoryManager  from "./CategoryManager";
 import PromoBannerEditor from "./PromoBannerEditor";
 import MarqueeBannerEditor from "./MarqueeBannerEditor";
 import AboutPageEditor  from "./AboutPageEditor";
-import { AlertTriangle, BarChart2, Check, CheckCircle, Clock, CreditCard, Download, Edit, FileText, Gift, Image, Layers, LayoutDashboard, Mail, MapPin, Minus, Package, Percent, Phone, Plus, PlusCircle, Printer, Save, Send, Settings, ShoppingBag, Tag, TicketPercent, Trash2, TrendingUp, Truck, Users, Warehouse, XCircle, Zap } from "lucide-react";
+import { BarChart2, Edit, FileText, Gift, Image, Layers, LayoutDashboard, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, TicketPercent, TrendingUp, Users, Warehouse, Zap } from "lucide-react";
 
 /* ── ADMIN ───────────────────────────────────────────────────────────────────── */
 const AdminDashboard = ({ setPage, toast }) => {

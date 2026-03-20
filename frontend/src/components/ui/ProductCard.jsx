@@ -3,7 +3,7 @@ import { useBreakpoint } from "../../hooks";
 import { useCart } from "../../context/CartContext";
 import { useCatConfig } from "../../store/catStore";
 import { Ic, fmt, disc, thumb, COLORS_MAP } from "../../utils/helpers";
-import { Heart, Home, Image, Info, LogOut, Menu, Package, Shirt, ShoppingCart, User } from "lucide-react";
+import { Heart, Home, Image, Info, LogOut, Menu, Package, Shirt, User } from "lucide-react";
 import { Stars } from "../../components/ui/Common";
 import { useAuth } from "../../context/AuthContext";
 

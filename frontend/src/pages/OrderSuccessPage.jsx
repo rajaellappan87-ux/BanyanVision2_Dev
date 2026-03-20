@@ -1,7 +1,7 @@
 import React from "react";
 import { useBreakpoint } from "../hooks";
 import { Ic, fmt } from "../utils/helpers";
-import { CheckCircle, Package, ShoppingBag } from "lucide-react";
+;
 import { SecLabel } from "../components/ui/Common";
 
 const OrderSuccessPage = ({ orderId, setPage }) => {

@@ -3,7 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { useSettings, updateSettings } from "../store/contentStore";
 import { DEFAULT_SETTINGS } from "../constants/defaults";
 import { Ic } from "../utils/helpers";
-import { Eye, Facebook, Globe, Instagram, Phone, Save, Settings, Truck, Twitter, Upload, Warehouse, X, Youtube } from "lucide-react";
+import { Eye, Facebook, Globe, Instagram, Phone, Save, Settings, Truck, Twitter, Warehouse, X, Youtube } from "lucide-react";
 
 /* ── SITE SETTINGS ───────────────────────────────────────────────────────────── */
 const SiteSettings = ({ toast }) => {
@@ -127,7 +127,6 @@ const SiteSettings = ({ toast }) => {
           </div>
         </div>
       )}
-
 
       {/* Delivery & Returns */}
       {renderSection(<Ic icon={Truck} size={18} color="#fff"/>, "Delivery & Returns",

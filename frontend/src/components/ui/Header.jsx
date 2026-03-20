@@ -4,8 +4,7 @@ import { useBreakpoint } from "../../hooks";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { Ic } from "../../utils/helpers";
-import { Heart, ShoppingCart, User, Menu, X, LogOut, Package,
-         ChevronDown, Settings, Home, Shirt, Info as InfoIcon } from "lucide-react";
+import { Heart, User, Menu, LogOut, Package, Home, Shirt, Info as InfoIcon } from "lucide-react";
 
 const Header = ({ page, setPage }) => {
   const {isMobile}=useBreakpoint();

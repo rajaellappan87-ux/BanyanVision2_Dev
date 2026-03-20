@@ -4,7 +4,7 @@ import { useCatConfig } from "../store/catStore";
 import { Ic, fmt } from "../utils/helpers";
 import { apiGetProducts } from "../api";
 import ProductCard from "../components/ui/ProductCard";
-import { Search, Filter, SortAsc } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import { Spinner, SecLabel } from "../components/ui/Common";
 
 /* ── SHOP PAGE ───────────────────────────────────────────────────────────────── */

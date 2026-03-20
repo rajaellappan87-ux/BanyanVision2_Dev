@@ -1,6 +1,3 @@
-import React from "react";
-import { Ic } from "../utils/helpers";
-import { Palette, Leaf, Zap, CheckCircle } from "lucide-react";
 
 // ─── Default Promo Banner ─────────────────────────────────────────────────────
 export const DEFAULT_PROMO = {

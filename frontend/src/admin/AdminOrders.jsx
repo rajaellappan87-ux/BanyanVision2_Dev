@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useBreakpoint } from "../hooks";
 import { Ic, fmt, printShippingLabel } from "../utils/helpers";
 import { apiUpdateStatus, apiDeleteOrder, apiExportOrdersEmail } from "../api";
-import { CheckCircle, Clock, CreditCard, Download, FileText, Info, Mail, MapPin, Package, Phone, Printer, Search, Send, Settings, Tag, Trash2, Truck, XCircle } from "lucide-react";
+import { CheckCircle, Clock, CreditCard, Download, FileText, Info, Mail, MapPin, Phone, Printer, Search, Send, Settings, Tag, Trash2, Truck, XCircle } from "lucide-react";
 
 /* ── ADMIN ORDERS LIST ───────────────────────────────────────────────────────── */
 const AdminOrdersList = ({ orders, setOrders, isMobile, iStyle, updateSt, toast }) => {
