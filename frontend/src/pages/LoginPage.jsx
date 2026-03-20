@@ -37,11 +37,14 @@ const LoginPage = ({ setPage, toast }) => {
             <div style={{fontSize:11,color:"rgba(255,255,255,.75)",letterSpacing:3,fontWeight:700,textTransform:"uppercase",marginBottom:32}}>Empowering Dreams, Inspiring Innovations</div>
             <p style={{color:"rgba(255,255,255,.8)",fontSize:15,lineHeight:1.85,marginBottom:32}}>India's finest handcrafted fashion destination. Real Razorpay payments, real artisans, real heritage.</p>
             <div style={{background:"rgba(255,255,255,.12)",borderRadius:"20px",padding:"20px 24px",textAlign:"left",backdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,.15)"}}>
-              <div style={{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:14}}>Demo Credentials</div>
-              {[[" Admin","admin@banyanvision.com","admin123"],["User","user@test.com","user123"]].map(([role,email,pass])=>(
-                <div key={role} style={{marginBottom:12,paddingBottom:12,borderBottom:"1px solid rgba(255,255,255,.15)"}}>
-                  <div style={{fontSize:13,color:"#fff",fontWeight:700,marginBottom:3}}>{role}</div>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,.75)",fontFamily:"monospace"}}>{email}<br/>{pass}</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:14}}>Why Shop With Us</div>
+              {[["Handcrafted","Verified Indian master artisans only"],["Secure Payments","Razorpay — UPI, Cards, EMI, NetBanking"],["Easy Returns","7-day hassle-free return policy"],["Fast Delivery","3–7 business days across India"]].map(([t,d])=>(
+                <div key={t} style={{marginBottom:12,paddingBottom:12,borderBottom:"1px solid rgba(255,255,255,.1)",display:"flex",alignItems:"flex-start",gap:10}}>
+                  <div style={{width:6,height:6,borderRadius:"50%",background:"var(--gold)",marginTop:5,flexShrink:0}}/>
+                  <div>
+                    <div style={{fontSize:13,color:"#fff",fontWeight:700,marginBottom:2}}>{t}</div>
+                    <div style={{fontSize:12,color:"rgba(255,255,255,.65)"}}>{d}</div>
+                  </div>
                 </div>
               ))}
             </div>
