@@ -4,7 +4,7 @@ import { useSettings } from "../store/contentStore";
 import { useAuth } from "../context/AuthContext";
 import { Ic } from "../utils/helpers";
 import { apiLogin, apiRegister } from "../api";
-import { Lock, Mail, User, Eye, EyeOff } from "lucide-react";
+;
 
 const LoginPage = ({ setPage, toast }) => {
   const {isMobile}=useBreakpoint();

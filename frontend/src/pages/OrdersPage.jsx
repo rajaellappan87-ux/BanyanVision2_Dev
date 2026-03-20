@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useBreakpoint } from "../hooks";
 import { Ic, fmt } from "../utils/helpers";
 import { apiGetMyOrders } from "../api";
-import { CheckCircle, Clock, Package, Settings, ShoppingBag, Truck, XCircle } from "lucide-react";
+import { CheckCircle, Clock, Package, Settings, Truck, XCircle } from "lucide-react";
 import { Spinner } from "../components/ui/Common";
 
 const OrdersPage = ({ setPage }) => {

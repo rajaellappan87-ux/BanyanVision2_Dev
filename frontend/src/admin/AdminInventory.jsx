@@ -3,7 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { useCatConfig } from "../store/catStore";
 import { Ic, fmt } from "../utils/helpers";
 import { apiAdminInventory, apiAdminStockUpdate } from "../api";
-import { Edit, Minus, Plus, RefreshCw, Search, Warehouse, ZoomIn } from "lucide-react";
+import { Edit, Minus, Plus, RefreshCw, Search } from "lucide-react";
 
 /* ── ADMIN INVENTORY ─────────────────────────────────────────────────────────── */
 const AdminInventory = ({ toast }) => {

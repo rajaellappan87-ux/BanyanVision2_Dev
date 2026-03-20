@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Star as StarIcon } from "lucide-react";
+;
 import { Ic } from "../../utils/helpers";
 
 /* ── Stars ─────────────────────────────────────────────────────────────────── */

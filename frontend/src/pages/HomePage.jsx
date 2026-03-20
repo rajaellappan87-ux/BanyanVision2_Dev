@@ -5,7 +5,7 @@ import { usePromoData, useMarqueeData, useSettings } from "../store/contentStore
 import { Ic, fmt, getIcon } from "../utils/helpers";
 import { apiGetProducts } from "../api";
 import ProductCard from "../components/ui/ProductCard";
-import { Leaf, Palette, Zap, Heart, CheckCircle, TrendingUp } from "lucide-react";
+import { Leaf, Palette, Zap, Heart } from "lucide-react";
 import { Spinner, SecLabel } from "../components/ui/Common";
 
 /* ── HOME ────────────────────────────────────────────────────────────────────── */

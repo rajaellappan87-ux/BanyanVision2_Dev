@@ -5,7 +5,7 @@ import { useSettings } from "../store/contentStore";
 import { useCart } from "../context/CartContext";
 import { Ic, fmt, thumb } from "../utils/helpers";
 import { apiValidateCoupon } from "../api";
-import { ArrowRight, Lock, ShoppingBag, Tag, Trash2 } from "lucide-react";
+import { Lock, ShoppingBag, Trash2 } from "lucide-react";
 
 /* ── Cart Order Summary (standalone component — not nested) ─────────────────── */
 const CartSummary = ({
