@@ -135,18 +135,15 @@ mongoose.connect(process.env.MONGO_URI)
     });
 
     // ── Graceful shutdown — release port cleanly on Ctrl+C or nodemon restart
-    const shutdown = (signal) => {
+    const shutdown = async (signal) => {
       console.log(`
 🛑 ${signal} received — closing server...`);
-      server.close(() => {
-        console.log("✅ Server closed cleanly");
-        mongoose.connection.close(false, () => {
-          console.log("✅ MongoDB disconnected");
-          process.exit(0);
-        });
-      });
-      // Force exit if graceful shutdown hangs after 5s
-      setTimeout(() => process.exit(0), 5000);
+      server.close(() => console.log("✅ Server closed cleanly"));
+      try {
+        await mongoose.connection.close(); // Mongoose 8.x — no callback
+        console.log("✅ MongoDB disconnected");
+      } catch {}
+      process.exit(0);
     };
 
     process.on("SIGTERM", () => shutdown("SIGTERM"));

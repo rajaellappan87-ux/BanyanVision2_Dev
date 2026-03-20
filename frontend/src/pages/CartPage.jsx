@@ -13,6 +13,7 @@ const CartSummary = ({
   couponCode, setCouponCode, couponInfo, setCouponInfo,
   cMsg, setCMsg, user, setPage, applyCoupon,
 }) => {
+  const st = useSettings();
   const iStyle = {
     background:"#fff", border:"1.5px solid var(--border2)", color:"var(--text)",
     padding:"10px 14px", fontSize:13, borderRadius:10, outline:"none", fontWeight:500,
@@ -87,7 +88,6 @@ const CartSummary = ({
 const CartPage = ({ setPage, toast }) => {
   const { isMobile } = useBreakpoint();
   const { user }     = useAuth();
-  const st           = useSettings();
   const {
     cart, updateCart, removeFromCart,
     subtotal, discountAmt, shipping, total,
