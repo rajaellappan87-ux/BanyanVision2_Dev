@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTopbarData } from "../../store/contentStore";
 import { useBreakpoint } from "../../hooks";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -10,6 +11,7 @@ const Header = ({ page, setPage }) => {
   const {isMobile}=useBreakpoint();
   const {user,logout}=useAuth();
   const {cartCount}=useCart();
+  const topbar=useTopbarData();
   const [scrolled,setScrolled]=useState(false);
   const [mob,setMob]=useState(false);
   const [uMenu,setUMenu]=useState(false);
@@ -23,14 +25,16 @@ const Header = ({ page, setPage }) => {
 
   return (
     <>
-      {/* Announcement */}
+      {/* Announcement bar — admin-editable via Admin → Marquee Banner */}
+      {topbar.active!==false&&(
       <div style={{background:"linear-gradient(90deg,var(--rose),var(--saffron),var(--rose))",backgroundSize:"200% 100%",animation:"shimmer 4s linear infinite",padding:"8px 0",overflow:"hidden"}}>
-        <div style={{display:"flex",animation:"marquee 22s linear infinite",whiteSpace:"nowrap",width:"max-content"}}>
-          {Array(5).fill("✦ FREE SHIPPING ABOVE ₹2000   ✦   WELCOME20 — 20% OFF YOUR FIRST ORDER   ✦   BRIDAL COLLECTION NOW LIVE   ✦   HANDCRAFTED BY 25+ MASTER ARTISANS   ").map((t,i)=>(
+        <div style={{display:"flex",animation:`marquee ${topbar.speed||22}s linear infinite`,whiteSpace:"nowrap",width:"max-content"}}>
+          {Array(5).fill((topbar.text||"✦ BanyanVision — Handcrafted Indian Fashion")+"   ").map((t,i)=>(
             <span key={i} style={{fontSize:11,fontWeight:700,color:"#fff",paddingRight:40,letterSpacing:.8}}>{t}</span>
           ))}
         </div>
       </div>
+      )}
 
       <header style={{
         position:"sticky",top:0,zIndex:1000,

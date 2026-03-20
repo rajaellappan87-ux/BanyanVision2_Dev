@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useBreakpoint } from "../hooks";
 import { useAuth } from "../context/AuthContext";
+import { useSettings } from "../store/contentStore";
 import { useCart } from "../context/CartContext";
 import { Ic, fmt, thumb } from "../utils/helpers";
 import { apiValidateCoupon } from "../api";
@@ -36,7 +37,7 @@ const CartSummary = ({
       {shipping>0&&(
         <div style={{fontSize:11,color:"var(--saffron)",marginBottom:12,padding:"8px 12px",
                      background:"var(--saffronL)",borderRadius:8,fontWeight:600}}>
-          Add {fmt(2000-(subtotal-discountAmt))} more for FREE delivery
+          Add {fmt((st.freeShippingAbove||2000)-(subtotal-discountAmt))} more for FREE delivery
         </div>
       )}
 
@@ -86,6 +87,7 @@ const CartSummary = ({
 const CartPage = ({ setPage, toast }) => {
   const { isMobile } = useBreakpoint();
   const { user }     = useAuth();
+  const st           = useSettings();
   const {
     cart, updateCart, removeFromCart,
     subtotal, discountAmt, shipping, total,

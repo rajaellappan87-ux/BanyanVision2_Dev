@@ -16,8 +16,9 @@ import AdminCustomers   from "./AdminCustomers";
 import SiteSettings     from "./SiteSettings";
 import CategoryManager  from "./CategoryManager";
 import PromoBannerEditor from "./PromoBannerEditor";
+import MarqueeBannerEditor from "./MarqueeBannerEditor";
 import AboutPageEditor  from "./AboutPageEditor";
-import { AlertTriangle, BarChart2, Check, CheckCircle, Clock, CreditCard, Download, Edit, FileText, Gift, Image, Layers, LayoutDashboard, Mail, MapPin, Minus, Package, Percent, Phone, Plus, PlusCircle, Printer, Save, Send, Settings, ShoppingBag, Tag, TicketPercent, Trash2, TrendingUp, Truck, Users, Warehouse, XCircle } from "lucide-react";
+import { AlertTriangle, BarChart2, Check, CheckCircle, Clock, CreditCard, Download, Edit, FileText, Gift, Image, Layers, LayoutDashboard, Mail, MapPin, Minus, Package, Percent, Phone, Plus, PlusCircle, Printer, Save, Send, Settings, ShoppingBag, Tag, TicketPercent, Trash2, TrendingUp, Truck, Users, Warehouse, XCircle, Zap } from "lucide-react";
 
 /* ── ADMIN ───────────────────────────────────────────────────────────────────── */
 const AdminDashboard = ({ setPage, toast }) => {
@@ -72,7 +73,7 @@ const AdminDashboard = ({ setPage, toast }) => {
   const delCoupon=async id=>{await apiDeleteCoupon(id);setCoupons(cs=>cs.filter(c=>c._id!==id));toast("Deleted");};
 
   const goTab=k=>{setTab(k);if(isMobile)setDrawer(false);};
-  const SIDE=[["overview",LayoutDashboard,"Overview"],["orders",ShoppingBag,"Orders"],["products",Package,"Products"],["add-product",PlusCircle,"Add Product"],["inventory",Warehouse,"Inventory"],["customers",Users,"Customers"],["analytics",BarChart2,"Analytics"],["coupons",TicketPercent,"Coupons"],["categories",Layers,"Categories"],["promo",Gift,"Offer Banner"],["about-editor",FileText,"About Page"],["settings",Settings,"Site Settings"]];
+  const SIDE=[["overview",LayoutDashboard,"Overview"],["orders",ShoppingBag,"Orders"],["products",Package,"Products"],["add-product",PlusCircle,"Add Product"],["inventory",Warehouse,"Inventory"],["customers",Users,"Customers"],["analytics",BarChart2,"Analytics"],["coupons",TicketPercent,"Coupons"],["categories",Layers,"Categories"],["promo",Gift,"Offer Banner"],["marquee",Zap,"Marquee Banner"],["about-editor",FileText,"About Page"],["settings",Settings,"Site Settings"]];
   const iStyle={background:"var(--ivory2)",border:"1.5px solid var(--border2)",color:"var(--text)",padding:"10px 12px",fontSize:13,borderRadius:12,outline:"none",width:"100%",boxSizing:"border-box",fontWeight:500};
   const lStyle={display:"block",fontSize:10,fontWeight:700,color:"var(--muted)",letterSpacing:.5,textTransform:"uppercase",marginBottom:6};
 
@@ -358,6 +359,9 @@ const AdminDashboard = ({ setPage, toast }) => {
         {/* OFFER BANNER EDITOR */}
         {tab==="promo"&&(
           <PromoBannerEditor toast={toast}/>
+        )}
+        {tab==="marquee"&&(
+          <MarqueeBannerEditor toast={toast}/>
         )}
 
         {/* ABOUT PAGE EDITOR */}

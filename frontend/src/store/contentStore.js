@@ -1,24 +1,49 @@
 import { useState, useEffect } from "react";
-import { DEFAULT_PROMO, DEFAULT_ABOUT, DEFAULT_SETTINGS } from "../constants/defaults";
+import { DEFAULT_PROMO, DEFAULT_ABOUT, DEFAULT_SETTINGS, DEFAULT_MARQUEE, DEFAULT_TOPBAR } from "../constants/defaults";
 import { apiGetConfig, apiSaveConfig } from "../api";
 
+// ── Pending save queue ────────────────────────────────────────────────────────
+// If DB save fails (backend down), queue it and retry automatically
+const _pendingQueue = {}; // { dbKey: { val, retries } }
+let _retryTimer = null;
+
+const schedulePendingRetry = () => {
+  if (_retryTimer) return; // already scheduled
+  _retryTimer = setInterval(async () => {
+    const keys = Object.keys(_pendingQueue);
+    if (keys.length === 0) {
+      clearInterval(_retryTimer);
+      _retryTimer = null;
+      return;
+    }
+    for (const key of keys) {
+      try {
+        await apiSaveConfig(key, _pendingQueue[key].val);
+        delete _pendingQueue[key];
+        console.info(`[${key}] ✅ DB sync recovered — saved successfully`);
+      } catch {
+        _pendingQueue[key].retries = (_pendingQueue[key].retries || 0) + 1;
+        // Give up after 20 retries (~10 min) to avoid infinite loop
+        if (_pendingQueue[key].retries > 20) {
+          console.warn(`[${key}] Gave up retrying after 20 attempts`);
+          delete _pendingQueue[key];
+        }
+      }
+    }
+  }, 30000); // retry every 30 seconds
+};
+
 // ── Generic persistent store factory ─────────────────────────────────────────
-// Priority order (highest wins):
-//   1. MongoDB (source of truth — loaded async on mount)
-//   2. localStorage (instant cache — used while DB loads)
-//   3. DEFAULT values (only used on very first launch, never overwrite saved data)
+// Priority:  MongoDB (source of truth) → localStorage (instant cache) → defaults
 const makeStore = (dbKey, lsKey, defaultVal) => {
 
-  // Load from localStorage — returns null if nothing saved yet
   const loadLocal = () => {
     try {
       const s = localStorage.getItem(lsKey);
-      if (!s) return null; // nothing saved — caller should use defaultVal
+      if (!s) return null;
       const parsed = JSON.parse(s);
-      // Only return if it looks like real saved data (has at least one key)
       return parsed && typeof parsed === "object" && Object.keys(parsed).length > 0
-        ? parsed
-        : null;
+        ? parsed : null;
     } catch { return null; }
   };
 
@@ -26,10 +51,9 @@ const makeStore = (dbKey, lsKey, defaultVal) => {
     try { localStorage.setItem(lsKey, JSON.stringify(v)); } catch {}
   };
 
-  // Start from localStorage if available, otherwise use defaults
-  // NEVER merge with defaults — saved data is kept as-is
   let _data      = loadLocal() || { ...defaultVal };
   let _listeners = [];
+  let _dbSynced  = false; // track if we have successfully saved to DB
 
   const notify = () => _listeners.forEach(fn => fn({ ..._data }));
 
@@ -38,62 +62,93 @@ const makeStore = (dbKey, lsKey, defaultVal) => {
     return () => { _listeners = _listeners.filter(f => f !== fn); };
   };
 
-  // Save to DB + localStorage
+  // ── Save: always saves to localStorage instantly, then tries DB ────────────
   const update = async (val) => {
     _data = { ...val };
     saveLocal(_data);
     notify();
+
     try {
       await apiSaveConfig(dbKey, val);
+      _dbSynced = true;
+      // Remove from pending queue if it was there
+      delete _pendingQueue[dbKey];
+      return { saved: true, db: true };
     } catch (e) {
-      console.warn(`[${dbKey}] DB save failed (changes kept in localStorage):`, e.message);
+      const reason = e?.response?.status
+        ? `Server error ${e.response.status}: ${e.response.data?.message || e.message}`
+        : "Backend not reachable — will retry automatically";
+
+      console.warn(`[${dbKey}] DB save failed — ${reason}`);
+
+      // Queue for automatic retry
+      _pendingQueue[dbKey] = { val, retries: 0 };
+      schedulePendingRetry();
+
+      return { saved: true, db: false, error: reason };
     }
   };
 
-  // Load from DB — overwrites local only if DB has real data
+  // ── Load from DB on mount ─────────────────────────────────────────────────
   const loadFromDB = async () => {
     try {
       const res = await apiGetConfig(dbKey);
       const dbVal = res?.data?.value;
-      // Only update if DB returned real data
       if (dbVal && typeof dbVal === "object" && Object.keys(dbVal).length > 0) {
-        _data = { ...dbVal }; // DB is source of truth — do NOT merge with defaults
+        _data = { ...dbVal };
         saveLocal(_data);
+        _dbSynced = true;
         notify();
       }
-      // If DB returns null (first launch), keep localStorage/defaults — do nothing
     } catch {
-      // Network error — keep localStorage data silently
+      // Backend not running — use localStorage silently
     }
   };
 
-  // React hook — shows local data instantly, syncs DB in background
+  // ── React hook ────────────────────────────────────────────────────────────
   const useStore = () => {
     const [d, setD] = useState({ ..._data });
     useEffect(() => {
-      loadFromDB(); // background DB sync
+      loadFromDB();
       return subscribe(setD);
     }, []);
     return d;
   };
 
-  return { update, useStore, loadFromDB, getData: () => ({ ..._data }) };
+  return {
+    update,
+    useStore,
+    loadFromDB,
+    getData:    () => ({ ..._data }),
+    isDbSynced: () => _dbSynced,
+    hasPending: () => !!_pendingQueue[dbKey],
+  };
 };
 
 // ── Promo Banner ──────────────────────────────────────────────────────────────
-const promoStore   = makeStore("promo",    "bv_promo_v1",    DEFAULT_PROMO);
-export const updatePromo  = promoStore.update;
-export const usePromoData = promoStore.useStore;
+const promoStore    = makeStore("promo",    "bv_promo_v1",    DEFAULT_PROMO);
+export const updatePromo   = promoStore.update;
+export const usePromoData  = promoStore.useStore;
 
 // ── About Page ────────────────────────────────────────────────────────────────
-const aboutStore   = makeStore("about",    "bv_about_v1",    DEFAULT_ABOUT);
-export const updateAbout  = aboutStore.update;
-export const useAboutData = aboutStore.useStore;
+const aboutStore    = makeStore("about",    "bv_about_v1",    DEFAULT_ABOUT);
+export const updateAbout   = aboutStore.update;
+export const useAboutData  = aboutStore.useStore;
 
 // ── Site Settings ─────────────────────────────────────────────────────────────
-const settingsStore  = makeStore("settings", "bv_settings_v1", DEFAULT_SETTINGS);
+export const settingsStore  = makeStore("settings", "bv_settings_v1", DEFAULT_SETTINGS);
 export const updateSettings = settingsStore.update;
 export const useSettings    = settingsStore.useStore;
 
-// _settings kept for backward compatibility — use useSettings() in components
+// ── Marquee Banner ────────────────────────────────────────────────────────────
+const marqueeStore  = makeStore("marquee",  "bv_marquee_v1",  DEFAULT_MARQUEE);
+export const updateMarquee  = marqueeStore.update;
+export const useMarqueeData = marqueeStore.useStore;
+
+// ── Top Announcement Bar ──────────────────────────────────────────────────────
+const topbarStore   = makeStore("topbar",   "bv_topbar_v1",   DEFAULT_TOPBAR);
+export const updateTopbar   = topbarStore.update;
+export const useTopbarData  = topbarStore.useStore;
+
+// _settings kept for backward compatibility
 export const _settings = DEFAULT_SETTINGS;

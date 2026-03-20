@@ -3,7 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { useSettings, updateSettings } from "../store/contentStore";
 import { DEFAULT_SETTINGS } from "../constants/defaults";
 import { Ic } from "../utils/helpers";
-import { Eye, Facebook, Globe, Instagram, Phone, Save, Settings, Twitter, Upload, Warehouse, X, Youtube } from "lucide-react";
+import { Eye, Facebook, Globe, Instagram, Phone, Save, Settings, Truck, Twitter, Upload, Warehouse, X, Youtube } from "lucide-react";
 
 /* ── SITE SETTINGS ───────────────────────────────────────────────────────────── */
 const SiteSettings = ({ toast }) => {
@@ -19,12 +19,16 @@ const SiteSettings = ({ toast }) => {
 
   const save = async () => {
     try {
-      await updateSettings({...form});
+      const result = await updateSettings({...form});
       setSaved(true);
-      toast("Site settings saved! Changes are live ✓");
+      if (result?.db) {
+        toast("Site settings saved to database ✓");
+      } else {
+        toast("Saved locally — will sync to DB when backend is online", "warn");
+      }
       setTimeout(() => setSaved(false), 3000);
     } catch (e) {
-      toast("Save failed — please try again", "error");
+      toast("Save failed — please try again");
     }
   };
 
@@ -120,6 +124,55 @@ const SiteSettings = ({ toast }) => {
           </div>
           <div style={{padding:"10px 14px",background:"#FFF7ED",borderRadius:10,border:"1px solid #FED7AA",fontSize:12,color:"#92400E",fontWeight:500}}>
             GST format: 2-digit state code + 10-digit PAN + 1-digit entity + Z + 1-digit check. Example: <strong>33ABCDE1234F1Z5</strong>
+          </div>
+        </div>
+      )}
+
+
+      {/* Delivery & Returns */}
+      {renderSection(<Ic icon={Truck} size={18} color="#fff"/>, "Delivery & Returns",
+        <div>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr",gap:16,marginBottom:16}}>
+            {renderField("Standard Shipping (₹)", "shippingCharge",    "number", "99",  "Charged when order is below free threshold")}
+            {renderField("Free Shipping Above (₹)","freeShippingAbove","number", "2000","Set to 0 for always free shipping")}
+            {renderField("Express Charge (₹)",     "expressCharge",    "number", "199", "Express delivery fee")}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:16,marginBottom:16}}>
+            {renderField("Standard Delivery Days", "standardDays","text","3–5 business days","Shown on product page and cart")}
+            {renderField("Express Delivery Days",  "expressDays", "text","1–2 business days","Shown on product page")}
+          </div>
+          <div style={{background:"var(--ivory2)",borderRadius:12,padding:"16px",border:"1.5px solid var(--border)"}}>
+            <div style={{fontSize:13,fontWeight:700,color:"var(--dark)",marginBottom:12}}>
+              Free Returns
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+              <div onClick={()=>setVal("returnsEnabled",!form.returnsEnabled)}
+                style={{width:44,height:24,borderRadius:12,flexShrink:0,
+                        background:form.returnsEnabled?"var(--rose)":"var(--border2)",
+                        cursor:"pointer",position:"relative",transition:"background .2s"}}>
+                <div style={{position:"absolute",top:3,
+                             left:form.returnsEnabled?22:3,width:18,height:18,
+                             borderRadius:"50%",background:"#fff",transition:"left .2s",
+                             boxShadow:"0 1px 4px rgba(0,0,0,.2)"}}/>
+              </div>
+              <span style={{fontSize:13,fontWeight:600,
+                            color:form.returnsEnabled?"var(--rose)":"var(--muted)"}}>
+                {form.returnsEnabled
+                  ? "Free Returns enabled — badge visible everywhere"
+                  : "Free Returns hidden — not shown anywhere on site"}
+              </span>
+            </div>
+            {form.returnsEnabled&&(
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12}}>
+                {renderField("Return Window (days)","returnDays", "number","7",  "How many days customers have to return")}
+                {renderField("Return Type",         "returnType", "text",  "Free pickup from door","Shown on product page")}
+              </div>
+            )}
+            {!form.returnsEnabled&&(
+              <div style={{fontSize:12,color:"var(--muted)",fontStyle:"italic"}}>
+                Enable Free Returns to show return badge on Homepage, Product pages, Footer, Login page and Cart.
+              </div>
+            )}
           </div>
         </div>
       )}

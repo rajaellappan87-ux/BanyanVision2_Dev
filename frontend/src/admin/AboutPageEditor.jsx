@@ -19,11 +19,12 @@ const AboutPageEditor = ({ toast }) => {
 
   const save=async()=>{
     try{
-      await updateAbout({...form});
+      const result=await updateAbout({...form});
       setSaved(true);
-      toast("About page updated! Changes are live.");
+      if(result?.db){toast("About page saved to database ✓");}
+      else{toast("Saved locally — will sync to DB when backend is online");}
       setTimeout(()=>setSaved(false),2500);
-    }catch(e){toast("Save failed — please try again","error");}
+    }catch(e){toast("Save failed — please try again");}
   };
 
   const reset=()=>{

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useBreakpoint } from "../hooks";
 import { useCatConfig } from "../store/catStore";
-import { usePromoData } from "../store/contentStore";
+import { usePromoData, useMarqueeData, useSettings } from "../store/contentStore";
 import { Ic, fmt, getIcon } from "../utils/helpers";
 import { apiGetProducts } from "../api";
 import ProductCard from "../components/ui/ProductCard";
@@ -13,6 +13,8 @@ const HomePage = ({ setPage, toast }) => {
   const {isMobile}=useBreakpoint();
   const catCfg=useCatConfig();
   const promo=usePromoData();
+  const marquee=useMarqueeData();
+  const st=useSettings();
   const [featured,setFeatured]=useState([]);
   const [trending,setTrending]=useState([]);
   const [loading,setLoading]=useState(true);
@@ -61,7 +63,7 @@ const HomePage = ({ setPage, toast }) => {
             </div>
             {/* Stats row */}
             <div className="u5" style={{display:"flex",gap:isMobile?20:36,paddingTop:28,borderTop:`1.5px solid var(--border2)`,flexWrap:"wrap"}}>
-              {[["12K+","Curated Styles"],["98%","Happy Clients"],["25+","Artisans"],["Free","Easy Returns"]].map(([v,l])=>(
+              {[["12K+","Curated Styles"],["98%","Happy Clients"],["25+","Artisans"],...(st.returnsEnabled?[["Free","Easy Returns"]]:[])].map(([v,l])=>(
                 <div key={l}>
                   <div style={{fontFamily:"var(--font-d)",fontSize:isMobile?20:26,fontWeight:700,background:"linear-gradient(135deg,var(--rose),var(--saffron))",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1}}>{v}</div>
                   <div style={{fontSize:10,color:"var(--muted)",fontWeight:600,letterSpacing:.5,marginTop:3,textTransform:"uppercase"}}>{l}</div>
@@ -101,27 +103,19 @@ const HomePage = ({ setPage, toast }) => {
         )}
       </section>
 
-      {/* ─ CRAFT STRIP ─ */}
+      {/* ─ CRAFT STRIP — admin-editable via Admin → Marquee Banner ─ */}
+      {marquee.active!==false&&(
       <div style={{background:"linear-gradient(90deg,var(--rose),var(--saffron),var(--purple),var(--rose))",
                    backgroundSize:"300% 100%",animation:"shimmer 6s linear infinite",
                    padding:"13px 0",overflow:"hidden",position:"relative"}}>
-        <div className="bv-marquee-track">
+        <div className="bv-marquee-track"
+             style={{animation:`marquee ${marquee.speed||32}s linear infinite`}}>
           {[0,1].map(copy=>(
             <span key={copy} style={{display:"inline-flex",alignItems:"center",flexShrink:0}}>
-              {[
-                "FREE SHIPPING ABOVE ₹2000",
-                "WELCOME20 — 20% OFF FIRST ORDER",
-                "BANARASI SILK SAREES",
-                "BLOCK PRINT KURTAS",
-                "HAND EMBROIDERY",
-                "ZARDOZI WORK",
-                "PATOLA SAREES",
-                "KUNDAN JEWELLERY",
-                "MIRROR WORK",
-                "KALAMKARI ART",
-                "BRIDAL COLLECTION NOW LIVE",
-                "CRAFTED BY MASTER ARTISANS",
-              ].map((t,i)=>(
+              {(Array.isArray(marquee.items)&&marquee.items.length>0
+                ? marquee.items
+                : ["BanyanVision — Handcrafted Indian Fashion"]
+              ).map((t,i)=>(
                 <span key={i} style={{
                   fontSize:11,fontWeight:700,
                   color:"rgba(255,255,255,.95)",
@@ -129,13 +123,14 @@ const HomePage = ({ setPage, toast }) => {
                   letterSpacing:1.5,
                   whiteSpace:"nowrap",
                 }}>
-                  ✦ {t}
+                  {marquee.separator||"✦"} {t}
                 </span>
               ))}
             </span>
           ))}
         </div>
       </div>
+      )}
 
       {/* ─ CATEGORIES ─ */}
       <section style={{background:"var(--cream)",padding:isMobile?"52px 20px":"80px 80px"}}>
@@ -228,7 +223,7 @@ const HomePage = ({ setPage, toast }) => {
             <h2 style={{fontFamily:"var(--font-d)",fontSize:isMobile?26:40,fontWeight:700,color:"var(--dark)",marginTop:8}}>Why Choose <span className="rose-text">BanyanVision</span></h2>
           </div>
           <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?2:4},1fr)`,gap:isMobile?14:1,background:isMobile?"transparent":"var(--border)",border:isMobile?"none":"1.5px solid var(--border)",borderRadius:isMobile?"none":"20px",overflow:"hidden"}}>
-            {[[Palette,"Authentic","Verified Indian artisans only","var(--roseL)"],[Leaf,"Sustainable","Eco-conscious packaging","var(--tealL)"],[Zap,"Fast Delivery","3–7 business days","var(--saffronL)"],[Heart,"Free Returns","30-day easy returns","var(--purpleL)"]].map(([HIcon,t,d,bg],i)=>(
+            {[[Palette,"Authentic","Verified Indian artisans only","var(--roseL)"],[Leaf,"Sustainable","Eco-conscious packaging","var(--tealL)"],[Zap,"Fast Delivery",`${st.standardDays||"3–7 business days"}`,"var(--saffronL)"],...(st.returnsEnabled?[[Heart,"Free Returns",`${st.returnDays||7}-day easy returns`,"var(--purpleL)"]]:[]) ].map(([HIcon,t,d,bg],i)=>(
               <div key={t} style={{padding:isMobile?"24px 16px":"40px 28px",textAlign:"center",background:isMobile?bg:"var(--cream)",transition:"background .2s"}}
                 onMouseEnter={e=>e.currentTarget.style.background=bg}
                 onMouseLeave={e=>e.currentTarget.style.background=isMobile?bg:"var(--cream)"}>

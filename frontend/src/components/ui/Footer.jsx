@@ -98,7 +98,7 @@ const Footer = ({ setPage }) => {
             </div>
             {/* Trust badges */}
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {["Secure Pay","Free Delivery","Easy Returns","★ 4.8 Rating"].map(b=>(
+              {["Secure Pay",...(st.showFreeDeliveryBadge!==false?["Free Delivery"]:[]),...(st.returnsEnabled?["Easy Returns"]:[]),"★ 4.8 Rating"].map(b=>(
                 <div key={b} style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",padding:"4px 10px",borderRadius:8,fontSize:10,color:"rgba(255,255,255,.55)",fontWeight:600}}>{b}</div>
               ))}
             </div>

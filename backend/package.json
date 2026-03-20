@@ -4,8 +4,14 @@
   "description": "BanyanVision Fashion - REST API Backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node --no-deprecation server.js",
+    "dev": "nodemon --no-deprecation --signal SIGTERM server.js",
+    "db:status": "node db-sync.js status",
+    "db:push:safe": "node db-sync.js push --safe",
+    "db:push:all": "node db-sync.js push --all",
+    "db:pull:all": "node db-sync.js pull --all",
+    "db:push": "node db-sync.js push",
+    "db:pull": "node db-sync.js pull"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -27,5 +33,20 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "server.js",
+      "routes.js",
+      "models.js",
+      "middleware.js",
+      "mailer.js"
+    ],
+    "ext": "js,json",
+    "ignore": [
+      "node_modules/"
+    ],
+    "delay": "1000",
+    "signal": "SIGTERM"
   }
 }

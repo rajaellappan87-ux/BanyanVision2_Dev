@@ -111,6 +111,45 @@ mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log("✅ MongoDB connected");
     await seedDatabase();
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+    const server = app.listen(PORT, () =>
+      console.log(`🚀 Server running on port ${PORT}`)
+    );
+
+    // ── Handle port already in use (EADDRINUSE) ──────────────────────────────
+    // Happens on Windows when nodemon restarts before OS releases the port.
+    // Wait 2 seconds and retry once — almost always resolves it.
+    server.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        console.warn(`⚠️  Port ${PORT} busy — retrying in 2s...`);
+        server.close();
+        setTimeout(() => {
+          app.listen(PORT, () =>
+            console.log(`🚀 Server running on port ${PORT} (retry OK)`)
+          );
+        }, 2000);
+      } else {
+        console.error("❌ Server error:", err);
+        process.exit(1);
+      }
+    });
+
+    // ── Graceful shutdown — release port cleanly on Ctrl+C or nodemon restart
+    const shutdown = (signal) => {
+      console.log(`
+🛑 ${signal} received — closing server...`);
+      server.close(() => {
+        console.log("✅ Server closed cleanly");
+        mongoose.connection.close(false, () => {
+          console.log("✅ MongoDB disconnected");
+          process.exit(0);
+        });
+      });
+      // Force exit if graceful shutdown hangs after 5s
+      setTimeout(() => process.exit(0), 5000);
+    };
+
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT",  () => shutdown("SIGINT"));
   })
   .catch(err => { console.error("❌ MongoDB connection error:", err); process.exit(1); });

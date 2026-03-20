@@ -18,11 +18,12 @@ const PromoBannerEditor = ({ toast }) => {
 
   const save=async()=>{
     try{
-      await updatePromo({...form});
+      const result=await updatePromo({...form});
       setSaved(true);
-      toast("Offer banner updated! Changes are live on the homepage.");
+      if(result?.db){toast("Offer banner saved to database ✓");}
+      else{toast("Saved locally — will sync to DB when backend is online");}
       setTimeout(()=>setSaved(false),2500);
-    }catch(e){toast("Save failed — please try again","error");}
+    }catch(e){toast("Save failed — please try again");}
   };
 
   const reset=()=>{
