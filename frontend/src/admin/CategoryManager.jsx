@@ -44,7 +44,7 @@ const CategoryManager = ({ toast }) => {
 
   useEffect(()=>{setCfg(JSON.parse(JSON.stringify(liveCat)));},[liveCat]);
 
-  const save=async(newCfg)=>{try{await updateGlobalCat(newCfg);setCfg({...newCfg});toast("Saved! Changes applied site-wide.");}catch(e){toast("Save failed","error");}};
+  const save=async(newCfg)=>{try{const result=await updateGlobalCat(newCfg);setCfg({...newCfg});if(result?.db){toast("Categories saved to database ✓");}else{toast("Saved locally — will sync to DB when backend is online");}}catch(e){toast("Save failed");}};
 
   const addCat=()=>{
     const n=newName.trim();

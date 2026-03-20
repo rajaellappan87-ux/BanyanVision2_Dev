@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useBreakpoint } from "../hooks";
+import { useSettings } from "../store/contentStore";
 import { useAuth } from "../context/AuthContext";
 import { Ic } from "../utils/helpers";
 import { apiLogin, apiRegister } from "../api";
@@ -7,6 +8,7 @@ import { Lock, Mail, User, Eye, EyeOff } from "lucide-react";
 
 const LoginPage = ({ setPage, toast }) => {
   const {isMobile}=useBreakpoint();
+  const st=useSettings();
   const {login,register}=useAuth();
   const [tab,setTab]=useState("login");
   const [form,setForm]=useState({name:"",email:"",password:""});
@@ -38,7 +40,7 @@ const LoginPage = ({ setPage, toast }) => {
             <p style={{color:"rgba(255,255,255,.8)",fontSize:15,lineHeight:1.85,marginBottom:32}}>India's finest handcrafted fashion destination. Real Razorpay payments, real artisans, real heritage.</p>
             <div style={{background:"rgba(255,255,255,.12)",borderRadius:"20px",padding:"20px 24px",textAlign:"left",backdropFilter:"blur(10px)",border:"1px solid rgba(255,255,255,.15)"}}>
               <div style={{fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:14}}>Why Shop With Us</div>
-              {[["Handcrafted","Verified Indian master artisans only"],["Secure Payments","Razorpay — UPI, Cards, EMI, NetBanking"],["Easy Returns","7-day hassle-free return policy"],["Fast Delivery","3–7 business days across India"]].map(([t,d])=>(
+              {[["Handcrafted","Verified Indian master artisans only"],["Secure Payments","Razorpay — UPI, Cards, EMI, NetBanking"],...(st.returnsEnabled?[["Easy Returns",`${st.returnDays||7}-day hassle-free return policy`]]:[]),["Fast Delivery",`${st.standardDays||"3–7 business days"} across India`]].map(([t,d])=>(
                 <div key={t} style={{marginBottom:12,paddingBottom:12,borderBottom:"1px solid rgba(255,255,255,.1)",display:"flex",alignItems:"flex-start",gap:10}}>
                   <div style={{width:6,height:6,borderRadius:"50%",background:"var(--gold)",marginTop:5,flexShrink:0}}/>
                   <div>

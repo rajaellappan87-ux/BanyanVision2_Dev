@@ -41,7 +41,13 @@ export const updateGlobalCat = async (cfg) => {
   _globalCatConfig = cfg;
   saveLocal(cfg);
   notify();
-  try { await apiSaveConfig(CAT_KEY, cfg); } catch (e) { console.warn("Config save failed:", e.message); }
+  try {
+    await apiSaveConfig(CAT_KEY, cfg);
+    return { saved: true, db: true };
+  } catch (e) {
+    console.warn("Category save failed — will retry:", e.message);
+    return { saved: true, db: false, error: e.message };
+  }
 };
 
 // ── On app start: load from DB and sync ──────────────────────────────────────
