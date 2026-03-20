@@ -26,7 +26,7 @@ const ShopPage = ({ setPage, toast }) => {
     if(cat!=="All")p.category=cat;
     if(search)p.search=search;
     if(maxPrice<25000)p.maxPrice=maxPrice;
-    apiGetProducts(p).then(r=>{setProds(r.data.products);setTotal(r.data.total);}).catch(console.error).finally(()=>setLoading(false));
+    apiGetProducts(p).then(r=>{setProds(Array.isArray(r?.data?.products)?r.data.products:[]);setTotal(r?.data?.total||0);}).catch(console.error).finally(()=>setLoading(false));
   },[cat,sort,search,maxPrice]);
 
   const iStyle={background:"#fff",border:"1.5px solid var(--border2)",color:"var(--text)",padding:"11px 16px",fontSize:13,borderRadius:12,outline:"none",width:"100%",fontWeight:500};
