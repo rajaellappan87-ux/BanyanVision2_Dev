@@ -123,3 +123,6 @@ export const apiClearLogs    = ()       => API.delete("/logs");
 // ── Email Diagnostics ─────────────────────────────────────────────────────────
 export const apiEmailCheck = ()     => API.get("/admin/email/check");
 export const apiEmailTest  = (to)   => API.post("/admin/email/test", { to });
+
+// ── DB Info ──────────────────────────────────────────────────────────────────
+export const apiGetDbInfo = () => API.get("/db-info");
