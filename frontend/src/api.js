@@ -119,3 +119,7 @@ export const apiSaveConfig   = (key, value)  => API.put(`/config/${key}`, { valu
 export const apiGetLogs      = (params) => API.get("/logs",           { params });
 export const apiGetLogStats  = ()       => API.get("/logs/stats");
 export const apiClearLogs    = ()       => API.delete("/logs");
+
+// ── Email Diagnostics ─────────────────────────────────────────────────────────
+export const apiEmailCheck = ()     => API.get("/admin/email/check");
+export const apiEmailTest  = (to)   => API.post("/admin/email/test", { to });
