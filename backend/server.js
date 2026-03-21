@@ -1,6 +1,33 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
+
+// ═══════════════════════════════════════════════════════════════════
+// CRASH GUARDS — MUST be first — prevents process from dying on any
+// unhandled error. Without these, a single bad async call kills server.
+// ═══════════════════════════════════════════════════════════════════
+process.on("uncaughtException", (err) => {
+  console.error("\n💀 UNCAUGHT EXCEPTION (server kept alive):", err.message);
+  console.error(err.stack);
+  // Log to DB if possible (non-blocking)
+  try {
+    const log = require("./logger");
+    log.fatal("system", "Uncaught exception — server kept alive", { message: err.message }, err);
+  } catch {}
+  // Do NOT call process.exit() — keep server running
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  const msg = reason instanceof Error ? reason.message : String(reason);
+  console.error("\n⚠️  UNHANDLED REJECTION (server kept alive):", msg);
+  try {
+    const log = require("./logger");
+    log.error("system", "Unhandled promise rejection — server kept alive", { reason: msg },
+      reason instanceof Error ? reason : null);
+  } catch {}
+  // Do NOT call process.exit() — keep server running
+});
+
 const express      = require("express");
 const mongoose     = require("mongoose");
 const cors         = require("cors");
@@ -11,8 +38,9 @@ const rateLimit    = require("express-rate-limit");
 
 // Using path.join(__dirname, ...) ensures modules resolve correctly
 // regardless of which directory you run `node` from
-const { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter, configRouter } = require(path.join(__dirname, "routes"));
+const { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter, configRouter, logRouter } = require(path.join(__dirname, "routes"));
 const { verifySmtp } = require(path.join(__dirname, "mailer"));
+const log = require(path.join(__dirname, "logger"));
 const { errorHandler } = require(path.join(__dirname, "middleware"));
 const { User, Product, Coupon } = require(path.join(__dirname, "models"));
 
@@ -22,10 +50,19 @@ const app = express();
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(compression());
 
-// Rate limiting — 100 requests per 15 min per IP
-const limiter = rateLimit({ windowMs: 15*60*1000, max: 100, message: { success:false, message:"Too many requests. Please try again later." } });
-// Stricter limit for auth routes — 10 attempts per 15 min
-const authLimiter = rateLimit({ windowMs: 15*60*1000, max: 10, message: { success:false, message:"Too many login attempts. Please try again later." } });
+// Rate limiting — generous in dev, strict in prod
+const isDev = process.env.NODE_ENV !== "production";
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isDev ? 2000 : 200,          // dev: 2000/15min  prod: 200/15min
+  message: { success:false, message:"Too many requests. Please try again later." },
+  skip: (req) => req.path === "/api/health", // never rate-limit health check
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isDev ? 100 : 15,            // dev: 100/15min   prod: 15/15min
+  message: { success:false, message:"Too many login attempts. Please try again later." },
+});
 
 app.use("/api/auth", authLimiter);
 app.use("/api", limiter);
@@ -52,6 +89,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
 
+// ─── Request Logger Middleware ────────────────────────────────────────────────
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    // Skip health check and static asset noise
+    if (req.path === "/api/health" || req.path.startsWith("/static")) return;
+    log.api(req, res, Date.now() - start);
+  });
+  next();
+});
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api/auth",     authRouter);
 app.use("/api/products", productRouter);
@@ -61,14 +109,27 @@ app.use("/api/wishlist", wishlistRouter);
 app.use("/api/coupons",  couponRouter);
 app.use("/api/admin",    adminRouter);
 app.use("/api/config",   configRouter);
+app.use("/api/logs",     logRouter);
 
 app.get("/api/health", (_, res) => res.json({ status: "ok", timestamp: new Date(), version: "1.0.0" }));
 
 // Security: hide powered-by
 app.disable("x-powered-by");
 
-// ─── Error handler ────────────────────────────────────────────────────────────
-app.use(errorHandler);
+// ─── Global error handler ────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  log.error("app", err.message || "Unhandled error", {
+    method: req.method,
+    path:   req.path,
+    body:   req.body,
+  }, err, {
+    statusCode: 500,
+    userId:    req.user?._id || null,
+    userEmail: req.user?.email || null,
+    ip:        req.ip,
+  });
+  errorHandler(err, req, res, next);
+});
 
 // ─── DB Seed (first run) ─────────────────────────────────────────────────────
 const seedDatabase = async () => {
@@ -108,15 +169,42 @@ const seedDatabase = async () => {
 // ─── Start server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+  // ── Connection resilience ──────────────────────────────
+  serverSelectionTimeoutMS: 10000,  // 10s to find a server
+  socketTimeoutMS:          45000,  // 45s socket timeout
+  connectTimeoutMS:         10000,  // 10s to establish connection
+  heartbeatFrequencyMS:     10000,  // ping Atlas every 10s (keeps free tier alive)
+  maxPoolSize:              10,     // max 10 simultaneous connections
+  minPoolSize:              2,      // keep 2 connections warm
+  // ── Auto-reconnect on network blip ────────────────────
+  retryWrites:              true,
+  retryReads:               true,
+})
   .then(async () => {
-    console.log("✅ MongoDB connected");
-    await seedDatabase();
-    await verifySmtp(); // verify SMTP on startup
 
-    const server = app.listen(PORT, () =>
-      console.log(`🚀 Server running on port ${PORT}`)
-    );
+  // ── MongoDB connection event handlers ─────────────────────────────────────
+  mongoose.connection.on("disconnected", () => {
+    log.warn("db", "MongoDB disconnected — will auto-reconnect");
+    // Mongoose auto-reconnects — no manual action needed
+  });
+  mongoose.connection.on("reconnected", () => {
+    log.info("db", "MongoDB reconnected successfully");
+  });
+  mongoose.connection.on("error", (err) => {
+    log.error("db", "MongoDB connection error", { message: err.message }, err);
+    // Do NOT exit — let Mongoose handle reconnection
+  });
+
+    log.db("MongoDB connected successfully", { uri: process.env.MONGO_URI?.split("@")[1] || "connected" });
+    log.env(); // log all env var status
+    await seedDatabase();
+    await verifySmtp();
+
+    const server = app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      log.info("system", `Server started`, { port: PORT, env: process.env.NODE_ENV, version: "1.0.0" });
+    });
 
     // ── Handle port already in use (EADDRINUSE) ──────────────────────────────
     // Happens on Windows when nodemon restarts before OS releases the port.
@@ -151,4 +239,4 @@ mongoose.connect(process.env.MONGO_URI)
     process.on("SIGTERM", () => shutdown("SIGTERM"));
     process.on("SIGINT",  () => shutdown("SIGINT"));
   })
-  .catch(err => { console.error("❌ MongoDB connection error:", err); process.exit(1); });
+  .catch(err => { log.fatal("db", "MongoDB connection failed", { message: err.message }); process.exit(1); });

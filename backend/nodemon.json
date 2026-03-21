@@ -1,7 +1,21 @@
 {
-  "watch": ["server.js", "routes.js", "models.js", "middleware.js", "mailer.js"],
+  "watch": [
+    "server.js",
+    "routes.js",
+    "models.js",
+    "middleware.js",
+    "mailer.js",
+    "logger.js",
+    "db-sync.js",
+    "start-check.js"
+  ],
   "ext": "js,json",
-  "ignore": ["node_modules/", "*.test.js"],
-  "delay": 1000,
-  "signal": "SIGTERM"
+  "ignore": [
+    "node_modules/",
+    "*.test.js",
+    "*.spec.js"
+  ],
+  "delay": 1500,
+  "signal": "SIGTERM",
+  "verbose": false
 }

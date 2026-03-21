@@ -1,3 +1,4 @@
+const log = require("./logger");
 const express  = require("express");
 const jwt      = require("jsonwebtoken");
 const crypto   = require("crypto");
@@ -30,6 +31,7 @@ authRouter.post("/register", [
     const { name, email, password } = req.body;
     if (await User.findOne({ email })) return res.status(400).json({ success: false, message: "Email already registered" });
     const user = await User.create({ name, email, password });
+    log.auth("New user registered", { email: user.email, role: user.role }, null, { ip: req.ip });
     res.status(201).json({ success: true, token: signToken(user._id), user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
@@ -42,6 +44,7 @@ authRouter.post("/login", async (req, res) => {
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
+    log.auth("User logged in", { email: user.email, role: user.role }, null, { userId: user._id, ip: req.ip });
     res.json({ success: true, token: signToken(user._id), user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone, address: user.address } });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
@@ -224,7 +227,9 @@ orderRouter.post("/create-payment", protect, async (req, res) => {
       currency: "INR",
       receipt:  `bv_${Date.now()}`,
     };
+    log.payment("Creating Razorpay order", { amount: options.amount, currency: options.currency });
     const rzpOrder = await getRazorpay().orders.create(options);
+    log.payment("Razorpay order created", { orderId: rzpOrder.id, amount: rzpOrder.amount });
     res.json({
       success:  true,
       orderId:  rzpOrder.id,
@@ -233,7 +238,7 @@ orderRouter.post("/create-payment", protect, async (req, res) => {
       keyId,    // send key to frontend (public key — safe to expose)
     });
   } catch (err) {
-    console.error("Razorpay create-payment error:", err.message);
+    log.error("payment", "Razorpay create-payment failed", { message: err.message, keyId: process.env.RAZORPAY_KEY_ID?.substring(0,14) }, err, { userId: req.user?._id, ip: req.ip });
     res.status(500).json({ success: false, message: err.error?.description || err.message });
   }
 });
@@ -294,6 +299,7 @@ orderRouter.post("/", protect, async (req, res) => {
       paymentId, paymentOrderId, paymentSignature, isPaid: true, paidAt: Date.now(),
     });
 
+    log.info("app", "New order created", { orderId: order._id, total: order.total, userId: req.user._id }, { userId: req.user._id, userEmail: req.user.email });
     // Reduce stock
     for (const item of items) {
       await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.qty } });
@@ -302,6 +308,7 @@ orderRouter.post("/", protect, async (req, res) => {
     // Send order confirmation email to customer + admin
     // Populate order items properly for email
     const populatedOrder = await Order.findById(order._id);
+    log.mail("Sending order confirmation email", { to: req.user.email, orderId: order._id });
     sendSafe(sendOrderConfirmation, { order: populatedOrder, user: req.user });
 
     res.status(201).json({ success: true, order });
@@ -354,6 +361,7 @@ orderRouter.put("/:id/status", protect, adminOnly, async (req, res) => {
     const newStatus = req.body.status;
     const order = await Order.findByIdAndUpdate(req.params.id, { status: newStatus }, { new: true }).populate("user", "name email phone");
     // Send status update email to customer
+    log.info("app", `Order status updated: ${newStatus}`, { orderId: req.params.id, status: newStatus }, { userId: req.user?._id });
     if (order.user && order.user.email) {
       sendSafe(sendStatusUpdate, { order, user: order.user, newStatus });
       // Extra thank-you email on delivery
@@ -548,6 +556,7 @@ configRouter.get("/:key", async (req, res) => {
     const doc = await SiteConfig.findOne({ key: req.params.key });
     res.json({ value: doc ? doc.value : null });
   } catch (e) {
+    log.error("db", `Config read failed: ${e.message}`, { key: req.params.key }, e);
     res.status(500).json({ message: e.message });
   }
 });
@@ -568,4 +577,102 @@ configRouter.put("/:key", protect, adminOnly, async (req, res) => {
   }
 });
 
-module.exports = { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter, configRouter };
+
+// ═════════════════════════════════════════════════════════════════════════════
+// LOG ROUTES — admin audit log viewer + frontend log receiver
+// ═════════════════════════════════════════════════════════════════════════════
+const { Log } = require("./models");
+const logRouter = express.Router();
+
+// GET /api/logs — admin: get logs with filters
+logRouter.get("/", protect, adminOnly, async (req, res) => {
+  try {
+    const {
+      level, category, source,
+      from, to,
+      search,
+      page = 1,
+      limit = 100,
+    } = req.query;
+
+    const filter = {};
+    if (level    && level    !== "all") filter.level    = level;
+    if (category && category !== "all") filter.category = category;
+    if (source   && source   !== "all") filter.source   = source;
+    if (from || to) {
+      filter.createdAt = {};
+      if (from) filter.createdAt.$gte = new Date(from);
+      if (to)   filter.createdAt.$lte = new Date(to);
+    }
+    if (search) {
+      filter.$or = [
+        { message:   { $regex: search, $options: "i" } },
+        { userEmail: { $regex: search, $options: "i" } },
+        { path:      { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const total = await Log.countDocuments(filter);
+    const logs  = await Log.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit))
+      .lean();
+
+    res.json({ success: true, logs, total, page: Number(page), pages: Math.ceil(total / limit) });
+  } catch (err) {
+    log.error("api", "Failed to fetch logs", { error: err.message }, err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/logs/stats — log counts by level for last 24h
+logRouter.get("/stats", protect, adminOnly, async (req, res) => {
+  try {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const stats = await Log.aggregate([
+      { $match: { createdAt: { $gte: since } } },
+      { $group: { _id: "$level", count: { $sum: 1 } } },
+    ]);
+    const byCategory = await Log.aggregate([
+      { $match: { createdAt: { $gte: since } } },
+      { $group: { _id: "$category", count: { $sum: 1 } } },
+    ]);
+    res.json({ success: true, byLevel: stats, byCategory });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/logs/frontend — receive logs from frontend
+logRouter.post("/frontend", async (req, res) => {
+  try {
+    // Rate limit frontend log submissions
+    const { level, category, message, details, stack, path: fePath } = req.body;
+    if (!message) return res.status(400).json({ message: "message required" });
+    log.frontend({
+      level, category, message, details, stack,
+      path: fePath,
+      userId:    req.user?._id,
+      userEmail: req.user?.email,
+    });
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ success: false });
+  }
+});
+
+// DELETE /api/logs — admin: clear all logs
+logRouter.delete("/", protect, adminOnly, async (req, res) => {
+  try {
+    const result = await Log.deleteMany({});
+    log.info("system", `Admin cleared all logs`, { deleted: result.deletedCount }, { userId: req.user._id });
+    res.json({ success: true, deleted: result.deletedCount });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+module.exports.logRouter = logRouter;
+
+module.exports = { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter, configRouter, logRouter };

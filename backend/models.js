@@ -117,3 +117,35 @@ const siteConfigSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports.SiteConfig = mongoose.model("SiteConfig", siteConfigSchema);
+
+// ─── models/Log.js ────────────────────────────────────────────────────────────
+// Central log store — persisted in MongoDB with 30-day TTL auto-purge
+const logSchema = new mongoose.Schema({
+  level:     { type: String, enum: ["info","warn","error","fatal","debug"], default: "info", index: true },
+  category:  { type: String, enum: ["app","db","auth","payment","email","storage","api","frontend","system","security"], default: "app", index: true },
+  message:   { type: String, required: true },
+  details:   { type: mongoose.Schema.Types.Mixed, default: null }, // extra JSON data
+  userId:    { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  userEmail: { type: String, default: null },
+  ip:        { type: String, default: null },
+  method:    { type: String, default: null },
+  path:      { type: String, default: null },
+  duration:  { type: Number, default: null }, // ms
+  statusCode:{ type: Number, default: null },
+  stack:     { type: String, default: null },  // error stack trace
+  env:       { type: String, default: process.env.NODE_ENV || "development" },
+  source:    { type: String, default: "backend" }, // backend | frontend
+}, {
+  timestamps: true,
+  // TTL index — MongoDB auto-deletes documents older than 30 days
+  // Note: The TTL index is created below
+});
+
+// 30-day TTL — auto purge
+logSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
+
+// Index for fast filtering in admin view
+logSchema.index({ level: 1, createdAt: -1 });
+logSchema.index({ category: 1, createdAt: -1 });
+
+module.exports.Log = mongoose.model("Log", logSchema);

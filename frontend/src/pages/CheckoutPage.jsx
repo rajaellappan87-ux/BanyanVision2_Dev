@@ -3,6 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { Ic, fmt, thumb } from "../utils/helpers";
+import log from "../utils/logger";
 import { apiCreatePayment, apiCreateOrder, apiValidateCoupon } from "../api";
 import { AlertTriangle, MapPin, Phone } from "lucide-react";
 
@@ -52,6 +53,7 @@ const CheckoutPage = ({ setPage, toast }) => {
     setProcessing(true);
     try{
       // Step 1: Load Razorpay checkout script
+      log.payment("Checkout initiated", { total, itemCount: cart.length });
       const ok=await loadRz();
       if(!ok){ toast("Could not load payment gateway. Check your internet connection.","error"); setProcessing(false); return; }
 
@@ -62,7 +64,8 @@ const CheckoutPage = ({ setPage, toast }) => {
       }catch(apiErr){
         const msg=apiErr.response?.data?.message||"Payment gateway error";
         console.error("create-payment failed:",apiErr.response?.data||apiErr.message);
-        toast(msg,"error");
+        log.payment("Payment API error", { msg }, null);
+      toast(msg,"error");
         setProcessing(false);
         return;
       }
@@ -94,6 +97,7 @@ const CheckoutPage = ({ setPage, toast }) => {
               paymentOrderId:res.razorpay_order_id,
               paymentSignature:res.razorpay_signature,
             });
+            log.payment("Payment successful", { orderId: or.data.order._id, total });
             clearCart();
             setPage(`order-success-${or.data.order._id}`);
           }catch(err){

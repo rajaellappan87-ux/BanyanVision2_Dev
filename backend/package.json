@@ -11,7 +11,12 @@
     "db:push:all": "node db-sync.js push --all",
     "db:pull:all": "node db-sync.js pull --all",
     "db:push": "node db-sync.js push",
-    "db:pull": "node db-sync.js pull"
+    "db:pull": "node db-sync.js pull",
+    "check": "node start-check.js",
+    "prod": "pm2 start server.js --name banyanvision-api --restart-delay=3000 --max-restarts=10",
+    "prod:stop": "pm2 stop banyanvision-api",
+    "prod:logs": "pm2 logs banyanvision-api",
+    "prod:status": "pm2 status"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
