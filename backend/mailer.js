@@ -2,21 +2,64 @@ const nodemailer = require("nodemailer");
 const log = require("./logger");
 
 // ─── Config validation ────────────────────────────────────────────────────────
-const getSmtpConfig = () => ({
-  host:   process.env.SMTP_HOST   || "smtppro.zoho.in",
-  port:   Number(process.env.SMTP_PORT) || 465,
-  secure: process.env.SMTP_SECURE !== "false",
-  user:   process.env.SMTP_USER,
-  pass:   process.env.SMTP_PASS,
-});
+// ── Detect which email provider is configured ─────────────────────────────────
+// Railway blocks ports 465 and 587 on many plans.
+// Recommended for Railway production: use Resend (port 465 on smtp.resend.com)
+// or keep Zoho but Railway must allow outbound SMTP (contact Railway support).
+const getSmtpConfig = () => {
+  const provider = process.env.EMAIL_PROVIDER || "zoho"; // zoho | resend | sendgrid | custom
+
+  // Auto-configure based on provider
+  const PROVIDERS = {
+    resend: {
+      host:   "smtp.resend.com",
+      port:   465,
+      secure: true,
+      user:   "resend",                         // Resend always uses "resend" as username
+      pass:   process.env.RESEND_API_KEY || process.env.SMTP_PASS,
+    },
+    sendgrid: {
+      host:   "smtp.sendgrid.net",
+      port:   587,
+      secure: false,
+      user:   "apikey",                         // SendGrid always uses "apikey" as username
+      pass:   process.env.SENDGRID_API_KEY || process.env.SMTP_PASS,
+    },
+    zoho: {
+      host:   process.env.SMTP_HOST || "smtppro.zoho.in",
+      port:   Number(process.env.SMTP_PORT) || 465,
+      secure: process.env.SMTP_SECURE !== "false",
+      user:   process.env.SMTP_USER,
+      pass:   process.env.SMTP_PASS,
+    },
+    custom: {
+      host:   process.env.SMTP_HOST,
+      port:   Number(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE !== "false",
+      user:   process.env.SMTP_USER,
+      pass:   process.env.SMTP_PASS,
+    },
+  };
+
+  return PROVIDERS[provider] || PROVIDERS.zoho;
+};
 
 const validateSmtpConfig = () => {
+  const provider = process.env.EMAIL_PROVIDER || "zoho";
   const cfg = getSmtpConfig();
   const missing = [];
-  if (!cfg.host) missing.push("SMTP_HOST");
-  if (!cfg.user) missing.push("SMTP_USER");
-  if (!cfg.pass) missing.push("SMTP_PASS");
-  return { valid: missing.length === 0, missing, cfg };
+
+  if (provider === "resend") {
+    if (!process.env.RESEND_API_KEY && !process.env.SMTP_PASS) missing.push("RESEND_API_KEY");
+  } else if (provider === "sendgrid") {
+    if (!process.env.SENDGRID_API_KEY && !process.env.SMTP_PASS) missing.push("SENDGRID_API_KEY");
+  } else {
+    if (!cfg.host) missing.push("SMTP_HOST");
+    if (!cfg.user) missing.push("SMTP_USER");
+    if (!cfg.pass) missing.push("SMTP_PASS");
+  }
+
+  return { valid: missing.length === 0, missing, cfg, provider };
 };
 
 // ─── Transporter factory ──────────────────────────────────────────────────────
@@ -79,12 +122,15 @@ const verifySmtpConnection = async () => {
     } catch {}
   }
 
-  // verify() failed on all ports — but mail might still work (Zoho quirk)
-  // Try sending a real test mail instead of verify()
+  // All verify() attempts failed
+  // ETIMEDOUT = Railway is blocking the port (most common)
+  // ECONNREFUSED = Port closed on the server side
+  // EAUTH = Wrong credentials
   return {
-    ok: false,
-    zohoNote: "verify() failed — this is normal for Zoho. Use Send Test Email to confirm actual sending works.",
-    error: "NOOP probe rejected by server (common with Zoho). Try Send Test Email button instead.",
+    ok:        false,
+    zohoNote:  true,
+    error:     "All SMTP ports blocked or unreachable from Railway.",
+    railwayFix: "Railway blocks outbound SMTP. Switch to Resend (free tier, works on Railway). See fix instructions in diagnostic panel.",
   };
 };
 
