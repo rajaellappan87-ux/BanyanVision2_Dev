@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCatConfig } from "../store/catStore";
 import { Ic, fmt, printShippingLabel, COLORS_MAP } from "../utils/helpers";
 import {
-  apiAdminStats, apiGetAllOrders, apiGetProducts, apiAdminUsers, apiGetCoupons,
+  apiGetDbInfo, apiAdminStats, apiGetAllOrders, apiGetProducts, apiAdminUsers, apiGetCoupons,
   apiCreateProduct, apiUpdateProduct, apiDeleteProduct, apiDeleteProductImage,
   apiUpdateStatus, apiCreateCoupon, apiDeleteCoupon, apiAdminStockUpdate,
 } from "../api";
@@ -28,6 +28,7 @@ const AdminDashboard = ({ setPage, toast }) => {
   const [drawer,setDrawer]=useState(false);
   const liveCat=useCatConfig();
   const [stats,setStats]=useState(null);
+  const [dbInfo,setDbInfo]=useState(null);
   const [orders,setOrders]=useState([]);
   const [products,setProducts]=useState([]);
   const [users,setUsers]=useState([]);
@@ -44,8 +45,8 @@ const AdminDashboard = ({ setPage, toast }) => {
 
   const reload=useCallback(()=>{
     setLoading(true);
-    Promise.all([apiAdminStats(),apiGetAllOrders(),apiGetProducts({limit:50}),apiAdminUsers(),apiGetCoupons()])
-      .then(([s,o,p,u,c])=>{setStats(s?.data?.stats||{});setOrders(Array.isArray(o?.data?.orders)?o.data.orders:[]);setProducts(Array.isArray(p?.data?.products)?p.data.products:[]);setUsers(Array.isArray(u?.data?.users)?u.data.users:[]);setCoupons(Array.isArray(c?.data?.coupons)?c.data.coupons:[]);})
+    Promise.all([apiAdminStats(),apiGetAllOrders(),apiGetProducts({limit:50}),apiAdminUsers(),apiGetCoupons(),apiGetDbInfo()])
+      .then(([s,o,p,u,c,db])=>{setStats(s?.data?.stats||{});setOrders(Array.isArray(o?.data?.orders)?o.data.orders:[]);setProducts(Array.isArray(p?.data?.products)?p.data.products:[]);setUsers(Array.isArray(u?.data?.users)?u.data.users:[]);setCoupons(Array.isArray(c?.data?.coupons)?c.data.coupons:[]);setDbInfo(db?.data||null);})
       .catch(console.error).finally(()=>setLoading(false));
   },[]);
 
@@ -99,6 +100,28 @@ const AdminDashboard = ({ setPage, toast }) => {
         {loading&&<Spinner/>}
 
         {/* OVERVIEW */}
+        {!loading&&tab==="overview"&&dbInfo&&dbInfo.isDevDB&&(
+          <div style={{background:"#FEF2F2",border:"2px solid #DC2626",borderRadius:12,padding:"14px 18px",marginBottom:16,display:"flex",gap:12,alignItems:"flex-start"}}>
+            <span style={{fontSize:24}}>🚨</span>
+            <div>
+              <div style={{fontWeight:800,color:"#DC2626",fontSize:15,marginBottom:4}}>Connected to DEV database in Production!</div>
+              <div style={{fontSize:13,color:"#991B1B",lineHeight:1.7}}>
+                MONGO_URI in Railway still points to <strong>banyanvision_dev</strong>.<br/>
+                Go to <strong>Railway → Variables → MONGO_URI</strong> → change <code>banyanvision_dev</code> to <code>banyanvision_prod</code>.
+              </div>
+            </div>
+          </div>
+        )}
+        {!loading&&tab==="overview"&&dbInfo&&(
+          <div style={{background:dbInfo.isProdDB?"#F0FDF4":"#FFFBEB",border:`1.5px solid ${dbInfo.isProdDB?"#BBF7D0":"#FDE68A"}`,borderRadius:10,padding:"10px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10,fontSize:12,flexWrap:"wrap"}}>
+            <span>{dbInfo.isProdDB?"✅":"⚠️"}</span>
+            <span style={{fontWeight:700,color:dbInfo.isProdDB?"#166534":"#92400E"}}>DB: {dbInfo.database}</span>
+            <span style={{color:"var(--muted)"}}>·</span>
+            {Object.entries(dbInfo.collections||{}).map(([k,v])=>(
+              <span key={k} style={{color:"var(--muted)"}}>{k}: <strong>{v}</strong></span>
+            ))}
+          </div>
+        )}
         {!loading&&tab==="overview"&&stats&&(
           <div>
             <h2 style={{fontFamily:"var(--font-d)",color:"var(--dark)",marginBottom:24,fontSize:30,fontWeight:700}}>Dashboard Overview</h2>

@@ -113,6 +113,36 @@ app.use("/api/logs",     logRouter);
 
 app.get("/api/health", (_, res) => res.json({ status: "ok", timestamp: new Date(), version: "1.0.0" }));
 
+// DB info — admin only — confirms which database is connected
+app.get("/api/db-info", async (req, res) => {
+  try {
+    const uri     = process.env.MONGO_URI || "";
+    const match   = uri.match(/\.mongodb\.net\/([^?]+)/);
+    const dbName  = match ? match[1] : "unknown";
+    const isValid = mongoose.connection.readyState === 1;
+
+    const db      = mongoose.connection.db;
+    const counts  = {};
+    for (const col of ["users","orders","products","coupons","siteconfigs"]) {
+      try { counts[col] = await db.collection(col).countDocuments(); } catch { counts[col] = -1; }
+    }
+
+    res.json({
+      database:    dbName,
+      isDevDB:     dbName.includes("dev"),
+      isProdDB:    dbName.includes("prod"),
+      connected:   isValid,
+      env:         process.env.NODE_ENV,
+      collections: counts,
+      warning:     dbName.includes("dev") && process.env.NODE_ENV === "production"
+        ? "⚠️ WRONG: Production server is connected to DEV database! Change MONGO_URI in Railway."
+        : null,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Security: hide powered-by
 app.disable("x-powered-by");
 
