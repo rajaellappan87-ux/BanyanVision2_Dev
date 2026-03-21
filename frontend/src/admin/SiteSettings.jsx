@@ -261,42 +261,83 @@ const SiteSettings = ({ toast }) => {
         </div>
 
         {emailStatus&&(
-          <div style={{background:emailStatus.ok?"#F0FDF4":"#FEF2F2",borderRadius:12,padding:"14px 16px",
-                       border:`1px solid ${emailStatus.ok?"#BBF7D0":"#FECACA"}`}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:emailStatus.steps||emailStatus.smtp?10:0}}>
-              <span style={{fontSize:18}}>{emailStatus.ok?"✅":"❌"}</span>
-              <span style={{fontWeight:700,fontSize:14,color:emailStatus.ok?"#166534":"#DC2626"}}>
-                {emailStatus.ok
-                  ? (emailStatus.testSent?"Test email sent successfully!":"SMTP connected successfully")
-                  : emailStatus.error||"SMTP connection failed"}
-              </span>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+
+            {/* Result banner */}
+            <div style={{background:emailStatus.ok?"#F0FDF4":"#FEF2F2",borderRadius:12,padding:"14px 16px",
+                         border:`1px solid ${emailStatus.ok?"#BBF7D0":"#FECACA"}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <span style={{fontSize:18}}>{emailStatus.ok?"✅":"❌"}</span>
+                <span style={{fontWeight:700,fontSize:14,color:emailStatus.ok?"#166534":"#DC2626"}}>
+                  {emailStatus.ok
+                    ? (emailStatus.testSent?"Test email sent successfully! Check your inbox.":"SMTP connected")
+                    : emailStatus.error||"SMTP failed"}
+                </span>
+              </div>
+
+              {/* SMTP config details */}
+              {emailStatus.smtp&&(
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:6,marginBottom:8}}>
+                  {[["Host",emailStatus.smtp.host],["Port",emailStatus.smtp.port],["From",emailStatus.smtp.from],["Admin",emailStatus.smtp.adminEmail]].map(([k,v])=>(
+                    <div key={k} style={{background:"rgba(255,255,255,.7)",borderRadius:7,padding:"6px 10px"}}>
+                      <div style={{fontSize:10,fontWeight:700,color:"var(--muted)",marginBottom:1}}>{k}</div>
+                      <div style={{fontSize:11,fontWeight:600,wordBreak:"break-all"}}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Step results */}
+              {emailStatus.steps&&(
+                <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                  {emailStatus.steps.map((s,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"flex-start",gap:7,fontSize:12}}>
+                      <span>{s.ok?"✅":"❌"}</span>
+                      <div>
+                        <span style={{fontWeight:700}}>{s.step}: </span>
+                        <span style={{color:"var(--muted)"}}>{s.detail}</span>
+                        {s.hint&&<div style={{marginTop:2,color:"#D97706",fontWeight:600,fontSize:11}}>💡 {s.hint}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {emailStatus.smtp&&(
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8,marginBottom:10}}>
-                {[["Host",emailStatus.smtp.host],["Port",emailStatus.smtp.port],["From",emailStatus.smtp.from],["Admin Email",emailStatus.smtp.adminEmail]].map(([k,v])=>(
-                  <div key={k} style={{background:"rgba(255,255,255,.7)",borderRadius:8,padding:"7px 10px"}}>
-                    <div style={{fontSize:10,fontWeight:700,color:"var(--muted)",marginBottom:2}}>{k}</div>
-                    <div style={{fontSize:11,fontWeight:600,wordBreak:"break-all"}}>{v}</div>
-                  </div>
-                ))}
+            {/* Railway fix guidance — shown when SMTP is blocked */}
+            {!emailStatus.ok&&(
+              <div style={{background:"#FFFBEB",borderRadius:12,padding:"16px",border:"1.5px solid #FDE68A"}}>
+                <div style={{fontWeight:700,fontSize:13,color:"#92400E",marginBottom:10}}>
+                  🚂 Railway blocks outbound SMTP ports (465, 587) — Switch to Resend (free, works instantly)
+                </div>
+
+                <div style={{fontSize:12,color:"#78350F",lineHeight:1.8,marginBottom:12}}>
+                  <strong>Step 1</strong> — Sign up free at{" "}
+                  <a href="https://resend.com" target="_blank" rel="noopener noreferrer"
+                    style={{color:"#C2185B",fontWeight:700}}>resend.com</a>
+                  {" "}→ Create API Key → Add your domain (banyanvision.com)<br/>
+                  <strong>Step 2</strong> — In Railway → Variables, add/update:
+                </div>
+
+                <div style={{background:"#1A1A2E",borderRadius:8,padding:"12px 14px",
+                              fontFamily:"monospace",fontSize:11,color:"#E2E8F0",
+                              marginBottom:12,lineHeight:2}}>
+                  <div><span style={{color:"#68D391"}}>EMAIL_PROVIDER</span> = resend</div>
+                  <div><span style={{color:"#68D391"}}>RESEND_API_KEY</span> = re_xxxxxxxxxxxxxxxxxxxx</div>
+                  <div><span style={{color:"#68D391"}}>EMAIL_FROM</span> = "BanyanVision" &lt;noreply@banyanvision.com&gt;</div>
+                  <div><span style={{color:"#68D391"}}>ADMIN_EMAIL</span> = admin@banyanvision.com</div>
+                  <div style={{color:"#718096",marginTop:4}}># Remove or keep these — they are ignored when EMAIL_PROVIDER=resend</div>
+                  <div style={{color:"#718096"}}># SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS</div>
+                </div>
+
+                <div style={{fontSize:12,color:"#78350F",lineHeight:1.8}}>
+                  <strong>Step 3</strong> — Click Deploy in Railway → test email again<br/>
+                  <strong>Free tier:</strong> 3,000 emails/month — enough for your store.<br/>
+                  <strong>Alternative:</strong> Contact Railway support and ask them to whitelist outbound SMTP for your service.
+                </div>
               </div>
             )}
 
-            {emailStatus.steps&&(
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                {emailStatus.steps.map((s,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:12}}>
-                    <span>{s.ok?"✅":"❌"}</span>
-                    <div>
-                      <span style={{fontWeight:700}}>{s.step}: </span>
-                      <span style={{color:"var(--muted)"}}>{s.detail}</span>
-                      {s.hint&&<div style={{marginTop:3,color:"#D97706",fontWeight:600}}>💡 {s.hint}</div>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </div>
