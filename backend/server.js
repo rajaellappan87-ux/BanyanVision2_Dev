@@ -12,6 +12,7 @@ const rateLimit    = require("express-rate-limit");
 // Using path.join(__dirname, ...) ensures modules resolve correctly
 // regardless of which directory you run `node` from
 const { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter, configRouter } = require(path.join(__dirname, "routes"));
+const { verifySmtp } = require(path.join(__dirname, "mailer"));
 const { errorHandler } = require(path.join(__dirname, "middleware"));
 const { User, Product, Coupon } = require(path.join(__dirname, "models"));
 
@@ -111,6 +112,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log("✅ MongoDB connected");
     await seedDatabase();
+    await verifySmtp(); // verify SMTP on startup
 
     const server = app.listen(PORT, () =>
       console.log(`🚀 Server running on port ${PORT}`)

@@ -465,33 +465,33 @@ const sendOrdersExportEmail = async ({ orders, statusFilter, adminEmail }) => {
     <div class="greeting">📊 Orders Export Ready</div>
     <div class="subtitle">
       Your BanyanVision orders export is attached as a CSV file.<br/>
-      Filter applied: <strong style="color:var(--rose)">\${statusFilter === "all" ? "All Orders" : statusFilter.toUpperCase()}</strong>
+      Filter applied: <strong style="color:#C2185B">${statusFilter === "all" ? "All Orders" : statusFilter.toUpperCase()}</strong>
     </div>
 
     <div class="total-bar">
       <div><div class="total-label">Total Orders Exported</div></div>
-      <div class="total-amount">\${total}</div>
+      <div class="total-amount">${total}</div>
     </div>
 
     <div class="card">
       <div class="card-title">📈 Summary</div>
       <div class="row">
         <span class="row-label">Total Revenue</span>
-        <span class="row-value" style="color:\${BRAND_COLOR}">\${fmt(revenue)}</span>
+        <span class="row-value" style="color:${BRAND_COLOR}">${fmt(revenue)}</span>
       </div>
       <div class="row">
         <span class="row-label">Export Date</span>
-        <span class="row-value">\${new Date().toLocaleString("en-IN")}</span>
+        <span class="row-value">${new Date().toLocaleString("en-IN")}</span>
       </div>
     </div>
 
     <div class="card">
       <div class="card-title">📋 Orders by Status</div>
-      \${statusRows || "<div style='color:#aaa;font-size:13px'>No orders found</div>"}
+      ${statusRows || "<div style='color:#aaa;font-size:13px'>No orders found</div>"}
     </div>
 
     <div style="background:#F0FDF4;border-radius:10px;padding:12px 16px;font-size:12px;color:#166534;border:1px solid #BBF7D0;margin-top:4px">
-      📎 The CSV file <strong>\${filename}</strong> is attached to this email.<br/>
+      📎 The CSV file <strong>${filename}</strong> is attached to this email.<br/>
       Open it in Excel, Google Sheets, or any spreadsheet app.
     </div>
   `);
@@ -499,7 +499,7 @@ const sendOrdersExportEmail = async ({ orders, statusFilter, adminEmail }) => {
   await transporter.sendMail({
     from: FROM_ADDRESS,
     to:   adminEmail,
-    subject: `📊 BanyanVision Orders Export — \${total} orders (\${statusFilter}) · \${dateStr}`,
+    subject: `📊 BanyanVision Orders Export — ${total} orders (${statusFilter}) · ${dateStr}`,
     html,
     attachments: [{
       filename,
@@ -508,7 +508,26 @@ const sendOrdersExportEmail = async ({ orders, statusFilter, adminEmail }) => {
     }],
   });
 
-  console.log(`📧 Orders export email sent → \${adminEmail} (\${total} orders)`);
+  console.log(`📧 Orders export email sent → ${adminEmail} (${total} orders)`);
 };
 
-module.exports = { sendOrderConfirmation, sendStatusUpdate, sendThankYou, sendReviewAck, sendSafe, sendOrdersExportEmail };
+
+// ─── SMTP Verify — call on server start to confirm email config works ──────────
+const verifySmtp = async () => {
+  try {
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.SMTP_HOST) {
+      console.warn("⚠️  Email: SMTP config missing in .env — emails will not send");
+      return false;
+    }
+    const transporter = createTransporter();
+    await transporter.verify();
+    console.log(`✅ Email: SMTP connected (${process.env.SMTP_HOST}:${process.env.SMTP_PORT})`);
+    return true;
+  } catch (err) {
+    console.error(`❌ Email: SMTP connection failed — ${err.message}`);
+    console.error("   Check SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in .env");
+    return false;
+  }
+};
+
+module.exports = { sendOrderConfirmation, sendStatusUpdate, sendThankYou, sendReviewAck, sendSafe, sendOrdersExportEmail, verifySmtp };
