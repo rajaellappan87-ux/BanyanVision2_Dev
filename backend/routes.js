@@ -300,7 +300,9 @@ orderRouter.post("/", protect, async (req, res) => {
     }
 
     // Send order confirmation email to customer + admin
-    sendSafe(sendOrderConfirmation, { order, user: req.user });
+    // Populate order items properly for email
+    const populatedOrder = await Order.findById(order._id);
+    sendSafe(sendOrderConfirmation, { order: populatedOrder, user: req.user });
 
     res.status(201).json({ success: true, order });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
@@ -350,7 +352,7 @@ orderRouter.post("/export-email", protect, adminOnly, async (req, res) => {
 orderRouter.put("/:id/status", protect, adminOnly, async (req, res) => {
   try {
     const newStatus = req.body.status;
-    const order = await Order.findByIdAndUpdate(req.params.id, { status: newStatus }, { new: true }).populate("user", "name email");
+    const order = await Order.findByIdAndUpdate(req.params.id, { status: newStatus }, { new: true }).populate("user", "name email phone");
     // Send status update email to customer
     if (order.user && order.user.email) {
       sendSafe(sendStatusUpdate, { order, user: order.user, newStatus });
