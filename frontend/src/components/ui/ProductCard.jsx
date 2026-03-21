@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useBreakpoint } from "../../hooks";
 import { useCart } from "../../context/CartContext";
 import { useCatConfig } from "../../store/catStore";
