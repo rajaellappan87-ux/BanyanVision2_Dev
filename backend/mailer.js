@@ -1,3 +1,4 @@
+const log = require("./logger");
 const nodemailer = require("nodemailer");
 
 // ─── Transporter (SMTP) ───────────────────────────────────────────────────────
@@ -403,7 +404,12 @@ const sendReviewAck = async ({ user, product, review }) => {
 
 // ─── Safe wrapper (never crash the main flow if email fails) ──────────────────
 const sendSafe = (fn, args) => {
-  fn(args).catch(err => console.error("📧 Email error:", err.message));
+  fn(args).catch(err => {
+    log.mail(`Email send failed: ${fn.name}`, {
+      error: err.message,
+      to:    args?.user?.email || args?.adminEmail || "unknown",
+    }, err);
+  });
 };
 
 

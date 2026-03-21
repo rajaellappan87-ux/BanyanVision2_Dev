@@ -20,14 +20,47 @@ const getBaseURL = () => {
   return `${backendHost}/api`;
 };
 
-const API = axios.create({ baseURL: getBaseURL() });
+export const API = axios.create({ baseURL: getBaseURL() });
 
 // Attach JWT token to every request automatically
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("bv_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  config.metadata = { startTime: Date.now() };
   return config;
 });
+
+// Response logger — logs all API errors to backend
+API.interceptors.response.use(
+  (response) => {
+    const duration = Date.now() - (response.config?.metadata?.startTime || Date.now());
+    if (duration > 3000) {
+      // Log slow API calls as warnings
+      import("./utils/logger").then(({ default: log }) => {
+        log.warn(`Slow API: ${response.config.method?.toUpperCase()} ${response.config.url} (${duration}ms)`, { duration });
+      });
+    }
+    return response;
+  },
+  (error) => {
+    const duration = Date.now() - (error.config?.metadata?.startTime || Date.now());
+    const status   = error.response?.status;
+    const url      = error.config?.url || "";
+    const method   = error.config?.method?.toUpperCase() || "";
+
+    // Log to backend
+    import("./utils/logger").then(({ default: log }) => {
+      const level = status >= 500 ? "error" : "warn";
+      log[level](`API ${method} ${url} → ${status || "NETWORK_ERROR"} (${duration}ms)`, {
+        status,
+        message: error.response?.data?.message || error.message,
+        url, method, duration,
+      }, error);
+    });
+
+    return Promise.reject(error);
+  }
+);
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const apiRegister      = (data)        => API.post("/auth/register", data);
@@ -81,3 +114,8 @@ export const apiAdminStockUpdate = (id, data) => API.patch(`/admin/inventory/${i
 // ── Site Config (saved permanently in MongoDB) ────────────────────────────────
 export const apiGetConfig    = (key)         => API.get(`/config/${key}`);
 export const apiSaveConfig   = (key, value)  => API.put(`/config/${key}`, { value });
+
+// ── Logs (admin audit) ────────────────────────────────────────────────────────
+export const apiGetLogs      = (params) => API.get("/logs",           { params });
+export const apiGetLogStats  = ()       => API.get("/logs/stats");
+export const apiClearLogs    = ()       => API.delete("/logs");

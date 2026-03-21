@@ -1,3 +1,4 @@
+import log from "./utils/logger";
 import React, { useState, useEffect, useCallback } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -32,6 +33,12 @@ function AppShell() {
   const [page, setPage] = useState("home");
   const { toasts, toast } = useToast();
   const { user, loading } = useAuth();
+  React.useEffect(() => {
+    if (user) {
+      log.setUser(user);
+      log.auth("User session active", { role: user.role });
+    }
+  }, [user?._id]);
   const navigate = useCallback(p => {
     setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -67,7 +74,7 @@ function AppShell() {
 
   return (
     <div style={{ fontFamily:"var(--font-b)", background:"var(--ivory)", minHeight:"100vh" }}>
-      <style>{GLOBAL_CSS + "@keyframes waFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}"}</style>
+      <style>{GLOBAL_CSS}</style>
       <Header page={page} setPage={navigate}/>
       <main>
         {page==="home"    && <HomePage      setPage={navigate} toast={toast}/>}
