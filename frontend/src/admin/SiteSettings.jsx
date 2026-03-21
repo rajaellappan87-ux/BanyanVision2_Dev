@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useBreakpoint } from "../hooks";
 import { useSettings, updateSettings } from "../store/contentStore";
+import { apiEmailCheck, apiEmailTest } from "../api";
 import { DEFAULT_SETTINGS } from "../constants/defaults";
 import { Ic } from "../utils/helpers";
 import { Eye, Facebook, Globe, Instagram, Phone, Save, Settings, Truck, Twitter, Warehouse, X, Youtube } from "lucide-react";
@@ -13,9 +14,34 @@ const SiteSettings = ({ toast }) => {
 
   // Sync form whenever DB data loads (first open after cold start)
   React.useEffect(() => { setForm({...st}); }, [JSON.stringify(st)]);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved]       = useState(false);
+  const [emailStatus, setEmailStatus] = useState(null);  // null | {ok, connected, smtp, error, steps}
+  const [emailTesting, setEmailTesting] = useState(false);
+  const [testTo, setTestTo] = useState("");
 
   const setVal = (k,v) => setForm(f => ({...f,[k]:v}));
+
+  const checkEmail = async () => {
+    setEmailTesting(true);
+    try {
+      const r = await apiEmailCheck();
+      setEmailStatus(r.data);
+    } catch (e) {
+      setEmailStatus({ ok: false, connected: false, error: e.response?.data?.error || e.message });
+    } finally { setEmailTesting(false); }
+  };
+
+  const sendTestEmail = async () => {
+    setEmailTesting(true);
+    try {
+      const r = await apiEmailTest(testTo || undefined);
+      setEmailStatus({ ...r.data, testSent: true });
+      toast(r.data.ok ? "✅ Test email sent — check your inbox!" : "❌ Test email failed — see details below");
+    } catch (e) {
+      setEmailStatus({ ok: false, error: e.response?.data?.error || e.message, testSent: true });
+      toast("Test email failed");
+    } finally { setEmailTesting(false); }
+  };
 
   const save = async () => {
     try {
@@ -208,6 +234,72 @@ const SiteSettings = ({ toast }) => {
           </div>
         </div>
       )}
+
+      {/* ── Email Diagnostics ── */}
+      <div style={{background:"#fff",border:"1.5px solid var(--border)",borderRadius:14,padding:"20px 22px",marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,marginBottom:14}}>
+          <div>
+            <div style={{fontWeight:700,fontSize:15,color:"var(--dark)"}}>📧 Email Diagnostics</div>
+            <div style={{fontSize:12,color:"var(--muted)",marginTop:2}}>Test your SMTP connection and send a test email</div>
+          </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <button onClick={checkEmail} disabled={emailTesting}
+              style={{padding:"9px 18px",borderRadius:10,background:"var(--ivory2)",border:"1.5px solid var(--border2)",fontWeight:600,fontSize:13,cursor:"pointer",color:"var(--muted)"}}>
+              {emailTesting?"Checking...":"Check SMTP"}
+            </button>
+            <button onClick={sendTestEmail} disabled={emailTesting}
+              style={{padding:"9px 18px",borderRadius:10,background:"var(--rose)",border:"none",fontWeight:700,fontSize:13,cursor:"pointer",color:"#fff"}}>
+              {emailTesting?"Sending...":"Send Test Email"}
+            </button>
+          </div>
+        </div>
+
+        <div style={{display:"flex",gap:8,marginBottom:emailStatus?12:0}}>
+          <input value={testTo} onChange={e=>setTestTo(e.target.value)}
+            placeholder={`Send test to (default: ${form.email||"admin email"})`}
+            style={{flex:1,padding:"9px 14px",borderRadius:10,border:"1.5px solid var(--border2)",fontSize:13,outline:"none",background:"#fff"}}/>
+        </div>
+
+        {emailStatus&&(
+          <div style={{background:emailStatus.ok?"#F0FDF4":"#FEF2F2",borderRadius:12,padding:"14px 16px",
+                       border:`1px solid ${emailStatus.ok?"#BBF7D0":"#FECACA"}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:emailStatus.steps||emailStatus.smtp?10:0}}>
+              <span style={{fontSize:18}}>{emailStatus.ok?"✅":"❌"}</span>
+              <span style={{fontWeight:700,fontSize:14,color:emailStatus.ok?"#166534":"#DC2626"}}>
+                {emailStatus.ok
+                  ? (emailStatus.testSent?"Test email sent successfully!":"SMTP connected successfully")
+                  : emailStatus.error||"SMTP connection failed"}
+              </span>
+            </div>
+
+            {emailStatus.smtp&&(
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:8,marginBottom:10}}>
+                {[["Host",emailStatus.smtp.host],["Port",emailStatus.smtp.port],["From",emailStatus.smtp.from],["Admin Email",emailStatus.smtp.adminEmail]].map(([k,v])=>(
+                  <div key={k} style={{background:"rgba(255,255,255,.7)",borderRadius:8,padding:"7px 10px"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"var(--muted)",marginBottom:2}}>{k}</div>
+                    <div style={{fontSize:11,fontWeight:600,wordBreak:"break-all"}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {emailStatus.steps&&(
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {emailStatus.steps.map((s,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:12}}>
+                    <span>{s.ok?"✅":"❌"}</span>
+                    <div>
+                      <span style={{fontWeight:700}}>{s.step}: </span>
+                      <span style={{color:"var(--muted)"}}>{s.detail}</span>
+                      {s.hint&&<div style={{marginTop:3,color:"#D97706",fontWeight:600}}>💡 {s.hint}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Save at bottom */}
       <div style={{display:"flex",justifyContent:"flex-end",gap:10,paddingTop:8}}>

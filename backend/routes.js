@@ -7,8 +7,7 @@ const { body, validationResult } = require("express-validator");
 const path = require("path");
 const { User, Product, Review, Order, Coupon } = require(path.join(__dirname, "models"));
 const { protect, adminOnly, upload, cloudinary } = require(path.join(__dirname, "middleware"));
-const { sendOrderConfirmation, sendStatusUpdate, sendThankYou, sendSafe } = require(path.join(__dirname, "mailer"));
-const { sendReviewAck } = require(path.join(__dirname, "mailer"));
+const { sendOrderConfirmation, sendStatusUpdate, sendThankYou, sendReviewAck, sendSafe, sendOrdersExportEmail, verifySmtp, diagnoseMail } = require(path.join(__dirname, "mailer"));
 
 const router = express.Router();
 
@@ -347,7 +346,7 @@ orderRouter.delete("/:id", protect, adminOnly, async (req, res) => {
 orderRouter.post("/export-email", protect, adminOnly, async (req, res) => {
   try {
     const { statusFilter = "all" } = req.body;
-    const { sendOrdersExportEmail } = require(path.join(__dirname, "mailer"));
+
     const filter = statusFilter !== "all" ? { status: statusFilter } : {};
     const orders = await Order.find(filter).populate("user","name email").sort({ createdAt: -1 });
     await sendOrdersExportEmail({ orders, statusFilter, adminEmail: process.env.ADMIN_EMAIL || "admin@banyanvision.com" });
@@ -545,6 +544,42 @@ adminRouter.delete("/users/:id", async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
+
+
+// ─── Email Diagnostic Routes ──────────────────────────────────────────────────
+// GET /api/admin/email/check — verify SMTP config and connection
+adminRouter.get("/email/check", protect, adminOnly, async (req, res) => {
+  try {
+    const result = await verifySmtp();
+    res.json({
+      success: result.ok,
+      connected: result.ok,
+      error: result.error || null,
+      code:  result.code  || null,
+      smtp: {
+        host:   process.env.SMTP_HOST   || "NOT SET",
+        port:   process.env.SMTP_PORT   || "NOT SET",
+        secure: process.env.SMTP_SECURE || "NOT SET",
+        user:   process.env.SMTP_USER   || "NOT SET",
+        from:   process.env.EMAIL_FROM  || "NOT SET",
+        adminEmail: process.env.ADMIN_EMAIL || "NOT SET",
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/admin/email/test — send a test email
+adminRouter.post("/email/test", protect, adminOnly, async (req, res) => {
+  try {
+    const { to } = req.body; // optional — defaults to ADMIN_EMAIL
+    const result = await diagnoseMail(to);
+    res.json({ success: result.ok, steps: result.steps });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // ─── Site Config Router ───────────────────────────────────────────────────────
 const { SiteConfig } = require("./models");
