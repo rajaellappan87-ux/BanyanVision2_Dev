@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useBreakpoint } from "../hooks";
 import { useSettings, updateSettings } from "../store/contentStore";
 import { apiEmailCheck, apiEmailTest } from "../api";

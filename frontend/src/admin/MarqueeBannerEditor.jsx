@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useBreakpoint } from "../hooks";
 import { useMarqueeData, updateMarquee, useTopbarData, updateTopbar } from "../store/contentStore";
 import { DEFAULT_MARQUEE, DEFAULT_TOPBAR } from "../constants/defaults";
