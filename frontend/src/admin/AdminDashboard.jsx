@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCatConfig } from "../store/catStore";
 import { Ic, fmt, printShippingLabel, COLORS_MAP } from "../utils/helpers";
 import {
-  apiGetDbInfo, apiAdminStats, apiGetAllOrders, apiGetProducts, apiAdminUsers, apiGetCoupons,
+  apiAdminStats, apiGetAllOrders, apiGetProducts, apiAdminUsers, apiGetCoupons,
   apiCreateProduct, apiUpdateProduct, apiDeleteProduct, apiDeleteProductImage,
   apiUpdateStatus, apiCreateCoupon, apiDeleteCoupon, apiAdminStockUpdate,
 } from "../api";
@@ -19,16 +19,14 @@ import PromoBannerEditor from "./PromoBannerEditor";
 import MarqueeBannerEditor from "./MarqueeBannerEditor";
 import LogViewer from "./LogViewer";
 import AboutPageEditor  from "./AboutPageEditor";
-import { BarChart2, Edit, FileText, Gift, Image, Layers, LayoutDashboard, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, TicketPercent, TrendingUp, Users, Warehouse, Zap } from "lucide-react";
+import { BarChart2, Edit, FileText, Gift, Layers, LayoutDashboard, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, TicketPercent, TrendingUp, Users, Warehouse, Zap } from "lucide-react";
 
-/* ── ADMIN ───────────────────────────────────────────────────────────────────── */
 const AdminDashboard = ({ setPage, toast }) => {
   const {isMobile}=useBreakpoint();
   const [tab,setTab]=useState("overview");
   const [drawer,setDrawer]=useState(false);
   const liveCat=useCatConfig();
   const [stats,setStats]=useState(null);
-  const [dbInfo,setDbInfo]=useState(null);
   const [orders,setOrders]=useState([]);
   const [products,setProducts]=useState([]);
   const [users,setUsers]=useState([]);
@@ -45,8 +43,8 @@ const AdminDashboard = ({ setPage, toast }) => {
 
   const reload=useCallback(()=>{
     setLoading(true);
-    Promise.all([apiAdminStats(),apiGetAllOrders(),apiGetProducts({limit:50}),apiAdminUsers(),apiGetCoupons(),apiGetDbInfo()])
-      .then(([s,o,p,u,c,db])=>{setStats(s?.data?.stats||{});setOrders(Array.isArray(o?.data?.orders)?o.data.orders:[]);setProducts(Array.isArray(p?.data?.products)?p.data.products:[]);setUsers(Array.isArray(u?.data?.users)?u.data.users:[]);setCoupons(Array.isArray(c?.data?.coupons)?c.data.coupons:[]);setDbInfo(db?.data||null);})
+    Promise.all([apiAdminStats(),apiGetAllOrders(),apiGetProducts({limit:50}),apiAdminUsers(),apiGetCoupons()])
+      .then(([s,o,p,u,c])=>{setStats(s?.data?.stats||{});setOrders(Array.isArray(o?.data?.orders)?o.data.orders:[]);setProducts(Array.isArray(p?.data?.products)?p.data.products:[]);setUsers(Array.isArray(u?.data?.users)?u.data.users:[]);setCoupons(Array.isArray(c?.data?.coupons)?c.data.coupons:[]);})
       .catch(console.error).finally(()=>setLoading(false));
   },[]);
 
@@ -66,7 +64,7 @@ const AdminDashboard = ({ setPage, toast }) => {
     setSaving(false);
   };
 
-  const resetP=()=>{setPf({name:"",description:"",price:"",originalPrice:"",category:Object.keys(_globalCatConfig)[0]||"Kurtas & Sets",fabric:"",occasion:"",care:"",stock:"",badge:"",featured:false,trending:false});setPSizes([]);setPColors([]);setPFiles([]);setEditId(null);setExImgs([]);};
+  const resetP=()=>{setPf({name:"",description:"",price:"",originalPrice:"",category:Object.keys(liveCat)[0]||"Kurtas & Sets",fabric:"",occasion:"",care:"",stock:"",badge:"",featured:false,trending:false});setPSizes([]);setPColors([]);setPFiles([]);setEditId(null);setExImgs([]);};
   const editProd=p=>{setPf({name:p.name,description:p.description,price:p.price,originalPrice:p.originalPrice||"",category:p.category,fabric:p.fabric||"",occasion:p.occasion||"",care:p.care||"",stock:p.stock,badge:p.badge||"",featured:p.featured,trending:p.trending});setPSizes(p.sizes||[]);setPColors(p.colors||[]);setExImgs(p.images||[]);setEditId(p._id);setPFiles([]);setTab("add-product");window.scrollTo({top:0,behavior:"smooth"});};
   const delProd=async id=>{if(!window.confirm("Delete?"))return;await apiDeleteProduct(id);setProducts(ps=>ps.filter(p=>p._id!==id));toast("Deleted");};
   const updateSt=async(id,status)=>{await apiUpdateStatus(id,status);setOrders(os=>os.map(o=>o._id===id?{...o,status}:o));toast(`→ ${status}`);};
@@ -83,7 +81,6 @@ const AdminDashboard = ({ setPage, toast }) => {
     <div style={{display:"flex",minHeight:"calc(100vh - 80px)",background:"var(--ivory)"}}>
       {isMobile&&<button onClick={()=>setDrawer(!drawer)} style={{position:"fixed",bottom:20,right:20,zIndex:600,background:"linear-gradient(135deg,var(--rose),var(--saffron))",border:"none",width:50,height:50,borderRadius:"50%",fontSize:20,color:"#fff",boxShadow:"0 6px 24px rgba(194,24,91,.4)"}}><Ic icon={Settings} size={20}/></button>}
 
-      {/* Sidebar */}
       {(!isMobile||drawer)&&(
         <div style={{width:isMobile?"100vw":220,background:"#fff",borderRight:"1.5px solid var(--border)",paddingTop:20,flexShrink:0,position:isMobile?"fixed":"sticky",inset:isMobile?0:undefined,top:isMobile?0:80,height:isMobile?"100vh":"calc(100vh - 80px)",zIndex:isMobile?999:1,overflowY:"auto"}}>
           {isMobile&&<button onClick={()=>setDrawer(false)} style={{position:"absolute",top:16,right:16,background:"none",border:"none",color:"var(--muted)",fontSize:24,cursor:"pointer"}}>×</button>}
@@ -100,28 +97,6 @@ const AdminDashboard = ({ setPage, toast }) => {
         {loading&&<Spinner/>}
 
         {/* OVERVIEW */}
-        {!loading&&tab==="overview"&&dbInfo&&dbInfo.isDevDB&&(
-          <div style={{background:"#FEF2F2",border:"2px solid #DC2626",borderRadius:12,padding:"14px 18px",marginBottom:16,display:"flex",gap:12,alignItems:"flex-start"}}>
-            <span style={{fontSize:24}}>🚨</span>
-            <div>
-              <div style={{fontWeight:800,color:"#DC2626",fontSize:15,marginBottom:4}}>Connected to DEV database in Production!</div>
-              <div style={{fontSize:13,color:"#991B1B",lineHeight:1.7}}>
-                MONGO_URI in Railway still points to <strong>banyanvision_dev</strong>.<br/>
-                Go to <strong>Railway → Variables → MONGO_URI</strong> → change <code>banyanvision_dev</code> to <code>banyanvision_prod</code>.
-              </div>
-            </div>
-          </div>
-        )}
-        {!loading&&tab==="overview"&&dbInfo&&(
-          <div style={{background:dbInfo.isProdDB?"#F0FDF4":"#FFFBEB",border:`1.5px solid ${dbInfo.isProdDB?"#BBF7D0":"#FDE68A"}`,borderRadius:10,padding:"10px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10,fontSize:12,flexWrap:"wrap"}}>
-            <span>{dbInfo.isProdDB?"✅":"⚠️"}</span>
-            <span style={{fontWeight:700,color:dbInfo.isProdDB?"#166534":"#92400E"}}>DB: {dbInfo.database}</span>
-            <span style={{color:"var(--muted)"}}>·</span>
-            {Object.entries(dbInfo.collections||{}).map(([k,v])=>(
-              <span key={k} style={{color:"var(--muted)"}}>{k}: <strong>{v}</strong></span>
-            ))}
-          </div>
-        )}
         {!loading&&tab==="overview"&&stats&&(
           <div>
             <h2 style={{fontFamily:"var(--font-d)",color:"var(--dark)",marginBottom:24,fontSize:30,fontWeight:700}}>Dashboard Overview</h2>
@@ -165,11 +140,7 @@ const AdminDashboard = ({ setPage, toast }) => {
 
         {/* ORDERS */}
         {!loading&&tab==="orders"&&(
-          <AdminOrdersList
-            orders={orders} setOrders={setOrders}
-            isMobile={isMobile} iStyle={iStyle}
-            updateSt={updateSt} toast={toast}
-          />
+          <AdminOrdersList orders={orders} setOrders={setOrders} isMobile={isMobile} iStyle={iStyle} updateSt={updateSt} toast={toast}/>
         )}
 
         {/* PRODUCTS */}
@@ -194,9 +165,7 @@ const AdminDashboard = ({ setPage, toast }) => {
                       <span style={{fontSize:11,color:p.stock<=5?"#DC2626":"#16A34A",fontWeight:700}}>Stock: {p.stock}</span>
                     </div>
                     <div style={{display:"flex",gap:8,marginTop:10}}>
-                      <button onClick={()=>editProd(p)} style={{background:"var(--ivory2)",border:"1.5px solid var(--border2)",padding:"5px 14px",borderRadius:8,fontSize:11,cursor:"pointer",color:"var(--text)",fontWeight:600,transition:"all .2s"}}
-                        onMouseEnter={e=>e.currentTarget.style.borderColor="var(--rose)"}
-                        onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border2)"}>✏ Edit</button>
+                      <button onClick={()=>editProd(p)} style={{background:"var(--ivory2)",border:"1.5px solid var(--border2)",padding:"5px 14px",borderRadius:8,fontSize:11,cursor:"pointer",color:"var(--text)",fontWeight:600}}>✏ Edit</button>
                       <button onClick={()=>delProd(p._id)} style={{background:"#FEF2F2",border:"1.5px solid #FECACA",padding:"5px 14px",borderRadius:8,fontSize:11,cursor:"pointer",color:"#DC2626",fontWeight:600}}>Delete</button>
                     </div>
                   </div>
@@ -240,7 +209,7 @@ const AdminDashboard = ({ setPage, toast }) => {
                 <label style={lStyle}>Sizes</label>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
                   {["XS","S","M","L","XL","XXL","Free Size","One Size"].map(s=>(
-                    <button key={s} onClick={()=>setPSizes(ps=>ps.includes(s)?ps.filter(x=>x!==s):[...ps,s])} style={{padding:"7px 16px",border:`2px solid ${pSizes.includes(s)?"var(--rose)":"var(--border2)"}`,borderRadius:10,background:pSizes.includes(s)?"linear-gradient(135deg,var(--rose),var(--saffron))":"#fff",color:pSizes.includes(s)?"#fff":"var(--text2)",cursor:"pointer",fontSize:12,fontWeight:700,transition:"all .2s"}}>
+                    <button key={s} onClick={()=>setPSizes(ps=>ps.includes(s)?ps.filter(x=>x!==s):[...ps,s])} style={{padding:"7px 16px",border:`2px solid ${pSizes.includes(s)?"var(--rose)":"var(--border2)"}`,borderRadius:10,background:pSizes.includes(s)?"linear-gradient(135deg,var(--rose),var(--saffron))":"#fff",color:pSizes.includes(s)?"#fff":"var(--text2)",cursor:"pointer",fontSize:12,fontWeight:700}}>
                       {s}
                     </button>
                   ))}
@@ -250,7 +219,7 @@ const AdminDashboard = ({ setPage, toast }) => {
                 <label style={lStyle}>Colours</label>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
                   {Object.keys(COLORS_MAP).map(c=>(
-                    <button key={c} onClick={()=>setPColors(pc=>pc.includes(c)?pc.filter(x=>x!==c):[...pc,c])} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",border:`2px solid ${pColors.includes(c)?"var(--rose)":"var(--border2)"}`,borderRadius:10,background:pColors.includes(c)?"var(--roseL)":"#fff",cursor:"pointer",fontSize:12,fontWeight:600,color:pColors.includes(c)?"var(--rose)":"var(--text2)",transition:"all .2s"}}>
+                    <button key={c} onClick={()=>setPColors(pc=>pc.includes(c)?pc.filter(x=>x!==c):[...pc,c])} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",border:`2px solid ${pColors.includes(c)?"var(--rose)":"var(--border2)"}`,borderRadius:10,background:pColors.includes(c)?"var(--roseL)":"#fff",cursor:"pointer",fontSize:12,fontWeight:600,color:pColors.includes(c)?"var(--rose)":"var(--text2)"}}>
                       <div style={{width:12,height:12,borderRadius:"50%",background:COLORS_MAP[c],border:"2px solid #fff",boxShadow:"0 1px 3px rgba(0,0,0,.15)"}}/>{c}
                     </button>
                   ))}
@@ -288,7 +257,7 @@ const AdminDashboard = ({ setPage, toast }) => {
                         <span style={{color:"var(--rose)"}}>{fmt(c.revenue)}</span>
                       </div>
                       <div style={{height:6,background:"var(--ivory3)",borderRadius:3}}>
-                        <div style={{height:"100%",width:`${(c.revenue/max)*100}%`,background:"linear-gradient(90deg,var(--rose),var(--saffron))",borderRadius:3,transition:"width 1s"}}/>
+                        <div style={{height:"100%",width:`${(c.revenue/max)*100}%`,background:"linear-gradient(90deg,var(--rose),var(--saffron))",borderRadius:3}}/>
                       </div>
                     </div>
                   );
@@ -375,20 +344,22 @@ const AdminDashboard = ({ setPage, toast }) => {
           <AdminInventory toast={toast}/>
         )}
 
-        {/* CATEGORIES MANAGER */}
+        {/* CATEGORIES */}
         {tab==="categories"&&(
           <CategoryManager toast={toast} liveCat={liveCat}/>
         )}
 
-        {/* OFFER BANNER EDITOR */}
+        {/* OFFER BANNER */}
         {tab==="promo"&&(
           <PromoBannerEditor toast={toast}/>
         )}
+
+        {/* MARQUEE BANNER */}
         {tab==="marquee"&&(
           <MarqueeBannerEditor toast={toast}/>
         )}
 
-        {/* ABOUT PAGE EDITOR */}
+        {/* ABOUT PAGE */}
         {tab==="about-editor"&&(
           <AboutPageEditor toast={toast}/>
         )}
@@ -397,9 +368,12 @@ const AdminDashboard = ({ setPage, toast }) => {
         {tab==="settings"&&(
           <SiteSettings toast={toast}/>
         )}
+
+        {/* LOG AUDIT */}
         {tab==="logs"&&(
           <LogViewer toast={toast}/>
         )}
+
       </div>
     </div>
   );
