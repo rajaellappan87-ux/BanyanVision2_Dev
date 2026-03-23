@@ -95,7 +95,10 @@ const makeStore = (dbKey, lsKey, defaultVal) => {
       const res = await apiGetConfig(dbKey);
       const dbVal = res?.data?.value;
       if (dbVal && typeof dbVal === "object" && Object.keys(dbVal).length > 0) {
-        _data = { ...dbVal };
+        // Merge with defaults so NEW fields added after DB save always have values
+        // e.g. shippingCharge added later — old DB records won't have it
+        // defaults fill in the gaps, DB values take priority for existing fields
+        _data = { ...defaultVal, ...dbVal };
         saveLocal(_data);
         _dbSynced = true;
         notify();

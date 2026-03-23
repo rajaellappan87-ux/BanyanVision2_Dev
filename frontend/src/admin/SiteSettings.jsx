@@ -78,7 +78,7 @@ const SiteSettings = ({ toast }) => {
   const renderField = (label, k, type="text", placeholder="", hint="") => (
     <div key={k} style={{marginBottom:16}}>
       <label style={{display:"block",fontSize:10,fontWeight:700,color:"var(--muted)",letterSpacing:.5,textTransform:"uppercase",marginBottom:6}}>{label}</label>
-      <input type={type} value={form[k]||""} onChange={e=>setVal(k,e.target.value)}
+      <input type={type} value={form[k]??""} onChange={e=>setVal(k, type==="number" ? (e.target.value===""?"":Number(e.target.value)) : e.target.value)}
         placeholder={placeholder} style={iSt}
         onFocus={e=>e.target.style.borderColor="var(--rose)"}
         onBlur={e=>e.target.style.borderColor="var(--border2)"}/>

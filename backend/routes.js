@@ -588,7 +588,41 @@ const configRouter = express.Router();
 // GET /api/config/:key — public read
 configRouter.get("/:key", async (req, res) => {
   try {
-    const doc = await SiteConfig.findOne({ key: req.params.key });
+    let doc = await SiteConfig.findOne({ key: req.params.key });
+
+    // Auto-migrate: if settings doc exists but is missing shipping fields,
+    // add them with defaults so frontend always gets complete settings object
+    if (doc && req.params.key === "settings" && doc.value) {
+      const SHIPPING_DEFAULTS = {
+        shippingCharge:        99,
+        freeShippingAbove:     2000,
+        expressCharge:         199,
+        standardDays:          "3–5 business days",
+        expressDays:           "1–2 business days",
+        returnsEnabled:        false,
+        returnDays:            7,
+        returnType:            "Free pickup from door",
+        showFreeDeliveryBadge: true,
+        showSecurePayBadge:    true,
+        showRatingBadge:       true,
+      };
+      let updated = false;
+      const merged = { ...doc.value };
+      for (const [k, v] of Object.entries(SHIPPING_DEFAULTS)) {
+        if (merged[k] === undefined) {
+          merged[k] = v;
+          updated = true;
+        }
+      }
+      if (updated) {
+        doc = await SiteConfig.findOneAndUpdate(
+          { key: "settings" },
+          { value: merged },
+          { new: true }
+        );
+        log.info("system", "Auto-migrated settings: added missing shipping fields");
+      }
+    }
     res.json({ value: doc ? doc.value : null });
   } catch (e) {
     log.error("db", `Config read failed: ${e.message}`, { key: req.params.key }, e);
