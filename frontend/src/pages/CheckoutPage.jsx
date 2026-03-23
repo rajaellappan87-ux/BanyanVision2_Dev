@@ -11,7 +11,7 @@ import { AlertTriangle, MapPin, Phone } from "lucide-react";
 const CheckoutPage = ({ setPage, toast }) => {
   const {isMobile}=useBreakpoint();
   const {user}=useAuth();
-  const {cart,subtotal,discountAmt,shipping,total,couponCode,clearCart}=useCart();
+  const {cart,subtotal,discountAmt,shipping,total,couponCode,clearCart,freeShippingAbove:shippingFreeAbove}=useCart();
   const [step,setStep]=useState(1);
   const [form,setForm]=useState({name:user?.name||"",email:user?.email||"",phone:user?.phone||"",address:user?.address||"",city:"",state:"",pin:""});
   const [errors,setErrors]=useState({});
@@ -202,18 +202,31 @@ const CheckoutPage = ({ setPage, toast }) => {
               </button>
             </div>
           </div>
-          {!isMobile&&(
-            <div style={{background:"linear-gradient(160deg,var(--roseL),var(--saffronL))",borderRadius:"20px",border:"1.5px solid var(--border)",padding:22}}>
-              <h4 style={{fontFamily:"var(--font-d)",color:"var(--dark)",margin:"0 0 16px",fontSize:18,fontWeight:700}}>Price Details</h4>
-              {[["Subtotal",fmt(subtotal)],discountAmt>0?["Saving",`−${fmt(discountAmt)}`]:null,["Delivery",shipping===0?"FREE":fmt(shipping)]].filter(Boolean).map(([k,v])=>(
-                <div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:10,fontSize:13,color:k==="Saving"?"#16A34A":"var(--text2)",fontWeight:k==="Saving"?700:400}}><span>{k}</span><span>{v}</span></div>
-              ))}
-              <div style={{borderTop:"1.5px solid var(--border2)",paddingTop:14,display:"flex",justifyContent:"space-between",fontFamily:"var(--font-d)",fontSize:22,fontWeight:700}}>
-                <span>Total</span>
-                <span style={{background:"linear-gradient(135deg,var(--rose),var(--saffron))",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{fmt(total)}</span>
+          {/* Price Details — shown on ALL screens */}
+          <div style={{background:"linear-gradient(160deg,var(--roseL),var(--saffronL))",borderRadius:"20px",border:"1.5px solid var(--border)",padding:22}}>
+            <h4 style={{fontFamily:"var(--font-d)",color:"var(--dark)",margin:"0 0 16px",fontSize:18,fontWeight:700}}>Price Details</h4>
+            {[
+              ["Subtotal",fmt(subtotal)],
+              discountAmt>0?["Saving",`−${fmt(discountAmt)}`]:null,
+              ["Delivery", shipping===0 ? "FREE ✓" : fmt(shipping)],
+            ].filter(Boolean).map(([k,v])=>(
+              <div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:10,fontSize:13,
+                color:k==="Saving"?"#16A34A":k==="Delivery"&&shipping===0?"#16A34A":"var(--text2)",
+                fontWeight:k==="Saving"||k==="Delivery"?600:400}}>
+                <span>{k}</span>
+                <span>{v}</span>
               </div>
+            ))}
+            <div style={{borderTop:"1.5px solid var(--border2)",paddingTop:14,display:"flex",justifyContent:"space-between",fontFamily:"var(--font-d)",fontSize:22,fontWeight:700}}>
+              <span>Total</span>
+              <span style={{background:"linear-gradient(135deg,var(--rose),var(--saffron))",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{fmt(total)}</span>
             </div>
-          )}
+            {shipping > 0 && (
+              <div style={{marginTop:10,fontSize:11,color:"var(--muted)",textAlign:"center"}}>
+                Add {fmt(shippingFreeAbove - (subtotal - discountAmt))} more for FREE delivery
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
