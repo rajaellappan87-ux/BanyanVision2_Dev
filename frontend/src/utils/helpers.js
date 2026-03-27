@@ -1,16 +1,5 @@
 import React from "react";
-import {
-  ShoppingBag, ShoppingCart, Heart, User, Search, Menu, X, ChevronDown, ChevronUp,
-  ChevronLeft, ChevronRight, Star, StarHalf, Package, Truck, CheckCircle, Clock,
-  XCircle, AlertCircle, AlertTriangle, Settings, BarChart2, Tag, Gift,
-  Users, UserPlus, Shield, Eye, EyeOff, Edit, Trash2, Plus, Minus,
-  Mail, Phone, MapPin, Instagram, Facebook, Youtube, Twitter,
-  Lock, RefreshCw, Upload, Download, Printer, Send, FileText, LayoutDashboard,
-  TrendingUp, Layers, Scissors, Crop, ZoomIn, Image,
-  Check, Save, LogOut, Home, Leaf, Zap, Globe, CreditCard,
-  TicketPercent, PackageOpen, Warehouse, Archive, PlusCircle,
-  ExternalLink, Palette, Shirt, Info as InfoIcon,
-} from "lucide-react";
+import { ShoppingBag, ShoppingCart, Heart, User, Search, Menu, X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Star, StarHalf, Package, Truck, CheckCircle, Clock, XCircle, AlertCircle, AlertTriangle, Settings, BarChart2, Tag, Gift, Users, UserPlus, Shield, Eye, EyeOff, Edit, Trash2, Plus, Minus, Mail, Phone, MapPin, Lock, RefreshCw, Upload, Download, Printer, Send, FileText, LayoutDashboard, TrendingUp, Layers, Scissors, Crop, ZoomIn, Check, Save, LogOut, Home, Leaf, Zap, Globe, CreditCard, Warehouse, Archive, PlusCircle, ExternalLink, Palette, Shirt, Info as InfoIcon,  } from "lucide-react";
 
 // ─── Icon helper ──────────────────────────────────────────────────────────────
 export const Ic = ({ icon: Icon, size=16, color="currentColor", style={}, className="" }) =>
@@ -20,8 +9,8 @@ export const Ic = ({ icon: Icon, size=16, color="currentColor", style={}, classN
 export const ICON_MAP = {
   Palette, Leaf, Zap, CheckCircle, Star, Heart, Lock, Truck, RefreshCw,
   Package, Users, ShoppingBag, Gift, Settings, Globe, Phone, Mail, MapPin,
-  Instagram, Facebook, Youtube, Twitter, Shield, TrendingUp, BarChart2,
-  Warehouse, Layers, FileText, PlusCircle, TicketPercent, Archive,
+  Shield, TrendingUp, BarChart2,
+  Warehouse, Layers, FileText, PlusCircle, Archive,
 };
 
 export const getIcon = (name, size=22, color="currentColor") => {
@@ -29,24 +18,74 @@ export const getIcon = (name, size=22, color="currentColor") => {
   return I ? <Ic icon={I} size={size} color={color}/> : <span>{name}</span>;
 };
 
+// ── Brand icon components (Instagram/Facebook/Youtube/Twitter removed from lucide 0.292+) ──
+export const InstagramIcon = ({ size=16, color="currentColor", style={} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",flexShrink:0,...style}}>
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+  </svg>
+);
+export const FacebookIcon = ({ size=16, color="currentColor", style={} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",flexShrink:0,...style}}>
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+  </svg>
+);
+export const YoutubeIcon = ({ size=16, color="currentColor", style={} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",flexShrink:0,...style}}>
+    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.96C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.4 19.54C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/>
+  </svg>
+);
+export const TwitterIcon = ({ size=16, color="currentColor", style={} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",flexShrink:0,...style}}>
+    <path d="M4 4l16 16M4 20L20 4"/>
+  </svg>
+);
+
+
 // Re-export all icons for convenience
 export {
   ShoppingBag, ShoppingCart, Heart, User, Search, Menu, X, ChevronDown, ChevronUp,
   ChevronLeft, ChevronRight, Star, StarHalf, Package, Truck, CheckCircle, Clock,
   XCircle, AlertCircle, AlertTriangle, Settings, BarChart2, Tag, Gift,
   Users, UserPlus, Shield, Eye, EyeOff, Edit, Trash2, Plus, Minus,
-  Mail, Phone, MapPin, Instagram, Facebook, Youtube, Twitter,
+  Mail, Phone, MapPin,
   Lock, RefreshCw, Upload, Download, Printer, Send, FileText, LayoutDashboard,
-  TrendingUp, Layers, Scissors, Crop, ZoomIn, Image,
+  TrendingUp, Layers, Scissors, Crop, ZoomIn,
   Check, Save, LogOut, Home, Leaf, Zap, Globe, CreditCard,
-  TicketPercent, PackageOpen, Warehouse, Archive, PlusCircle,
+  Warehouse, Archive, PlusCircle,
   ExternalLink, Palette, Shirt, InfoIcon,
 };
 
 // ─── Format helpers ───────────────────────────────────────────────────────────
-export const fmt  = n => "₹" + Number(n).toLocaleString("en-IN");
-export const disc = (orig, price) => orig && orig > price ? Math.round((1 - price/orig)*100) : 0;
-export const thumb = url => url ? url.replace("/upload/", "/upload/w_400,q_auto,f_auto/") : url;
+export const fmt  = n => "₹" + Number(n || 0).toLocaleString("en-IN");
+export const disc = (orig, price) => (orig && price && orig > price) ? Math.round((1 - price/orig)*100) : 0;
+export const thumb = (input) => {
+  try {
+    // Recursively extract a string URL from any possible input shape
+    const extract = (v) => {
+      if (!v) return "";
+      if (typeof v === "string") return v;
+      // {url: "...", public_id: "..."} — Cloudinary image object
+      if (v.url)    return extract(v.url);
+      // {image: "..."} or {image: {url:"..."}}
+      if (v.image)  return extract(v.image);
+      // {images: [...]}
+      if (Array.isArray(v.images) && v.images.length)  return extract(v.images[0]);
+      // plain array
+      if (Array.isArray(v) && v.length) return extract(v[0]);
+      // number, boolean etc — not usable
+      return "";
+    };
+
+    const url = extract(input);
+    if (!url || typeof url !== "string") return "";
+    // Add Cloudinary auto-optimisation transform
+    return url.includes("/upload/")
+      ? url.replace("/upload/", "/upload/w_400,q_auto,f_auto/")
+      : url;
+  } catch {
+    return "";
+  }
+};
 
 export const COLORS_MAP = {
   "Red":"#EF4444","Pink":"#EC4899","Rose":"#F43F5E","Orange":"#F97316",

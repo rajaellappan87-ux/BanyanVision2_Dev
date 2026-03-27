@@ -4,7 +4,8 @@ import { useSettings, updateSettings } from "../store/contentStore";
 import { apiEmailCheck, apiEmailTest } from "../api";
 import { DEFAULT_SETTINGS } from "../constants/defaults";
 import { Ic } from "../utils/helpers";
-import { Eye, Facebook, Globe, Instagram, Phone, Save, Settings, Truck, Twitter, Warehouse, X, Youtube } from "lucide-react";
+import { Eye, Globe, Phone, Save, Settings, Truck, Warehouse, X } from "lucide-react";
+import { InstagramIcon, FacebookIcon, YoutubeIcon, TwitterIcon } from "../utils/helpers";
 
 /* ── SITE SETTINGS ───────────────────────────────────────────────────────────── */
 const SiteSettings = ({ toast }) => {
@@ -215,10 +216,10 @@ const SiteSettings = ({ toast }) => {
             <div style={{fontSize:10,fontWeight:700,color:"var(--muted)",letterSpacing:.5,textTransform:"uppercase",marginBottom:10}}>Preview</div>
             <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
               {[
-                {Icon:Instagram,label:"Instagram",k:"instagram",color:"#E1306C"},
-                {Icon:Facebook, label:"Facebook", k:"facebook", color:"#1877F2"},
-                {Icon:Youtube,  label:"YouTube",  k:"youtube",  color:"#FF0000"},
-                {Icon:Twitter,  label:"Twitter/X",k:"twitter",  color:"#1DA1F2"},
+                {Icon:InstagramIcon,label:"Instagram",k:"instagram",color:"#E1306C"},
+                {Icon:FacebookIcon, label:"Facebook", k:"facebook", color:"#1877F2"},
+                {Icon:YoutubeIcon,  label:"YouTube",  k:"youtube",  color:"#FF0000"},
+                {Icon:TwitterIcon,  label:"Twitter/X",k:"twitter",  color:"#1DA1F2"},
               ].map(s=>(
                 <a key={s.k} href={form[s.k]||"#"} target="_blank" rel="noopener noreferrer"
                   style={{display:"flex",alignItems:"center",gap:7,padding:"7px 14px",borderRadius:99,
@@ -226,7 +227,7 @@ const SiteSettings = ({ toast }) => {
                     border:`1.5px solid ${form[s.k]?s.color:"var(--border2)"}`,
                     textDecoration:"none",fontSize:12,fontWeight:600,
                     color:form[s.k]?s.color:"var(--muted)",transition:"all .2s"}}>
-                  <Ic icon={s.Icon} size={14}/> {s.label}
+                  <s.Icon size={14} color={s.color}/> {s.label}
                   {form[s.k]&&<span style={{fontSize:9,opacity:.6}}>↗</span>}
                 </a>
               ))}

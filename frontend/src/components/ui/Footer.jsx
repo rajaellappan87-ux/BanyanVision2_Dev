@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useBreakpoint } from "../../hooks";
 import { useSettings } from "../../store/contentStore";
 import { Ic } from "../../utils/helpers";
-import { Mail, Phone, Instagram, Facebook, Youtube, Twitter } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
+import { InstagramIcon, FacebookIcon, YoutubeIcon, TwitterIcon } from "../../utils/helpers";
 
 /* ── WHATSAPP FLOATING BUTTON ─────────────────────────────────────────────────── */
 const WhatsAppButton = () => {
@@ -83,10 +84,10 @@ const Footer = ({ setPage }) => {
             {/* Social */}
             <div style={{display:"flex",gap:10,marginBottom:16}}>
               {[
-                {Icon:Instagram,label:"Instagram",url:st.instagram},
-                {Icon:Facebook, label:"Facebook", url:st.facebook},
-                {Icon:Youtube,  label:"YouTube",  url:st.youtube},
-                {Icon:Twitter,  label:"Twitter",  url:st.twitter},
+                {Icon:InstagramIcon,label:"Instagram",url:st.instagram},
+                {Icon:FacebookIcon, label:"Facebook", url:st.facebook},
+                {Icon:YoutubeIcon,  label:"YouTube",  url:st.youtube},
+                {Icon:TwitterIcon,  label:"Twitter",  url:st.twitter},
               ].filter(s=>s.url).map(s=>(
                 <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" title={s.label}
                   style={{width:34,height:34,background:"rgba(255,255,255,.07)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",textDecoration:"none",transition:"all .2s",border:"1px solid rgba(255,255,255,.08)"}}

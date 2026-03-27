@@ -216,7 +216,7 @@ const ProductDetailPage = ({ productId, setPage, toast }) => {
 
         {tab==="shipping"&&(
           <div style={{maxWidth:600}}>
-            {[[Truck,"Standard Delivery",st.standardDays||"3–5 business days",(st.freeShippingAbove===0?"Always Free":`Free above ₹${st.freeShippingAbove||2000} · ₹${st.shippingCharge||99} otherwise`)],[Zap,"Express Delivery",st.expressDays||"1–2 business days",`₹${st.expressCharge||199}`],...(st.returnsEnabled?[[RefreshCw,"Free Returns",`Within ${st.returnDays||7} days`,st.returnType||"Free pickup from door"]]:[[]]),[Lock,"Secure Payment","Razorpay","UPI · Cards · EMI · NetBanking"]].map(([DIcon,t,sub,val])=>(
+            {[[Truck,"Standard Delivery",st.standardDays||"3–5 business days",(st.freeShippingAbove===0?"Always Free":`Free above ₹${st.freeShippingAbove||2000} · ₹${st.shippingCharge||99} otherwise`)],[Zap,"Express Delivery",st.expressDays||"1–2 business days",`₹${st.expressCharge||199}`],...(st.returnsEnabled?[[RefreshCw,"Free Returns",`Within ${st.returnDays||7} days`,st.returnType||"Free pickup from door"]]:[]),[Lock,"Secure Payment","Razorpay","UPI · Cards · EMI · NetBanking"]].map(([DIcon,t,sub,val])=>(
               <div key={t} style={{display:"flex",gap:16,padding:"18px 0",borderBottom:"1.5px solid var(--border)",alignItems:"flex-start"}}>
                 <div style={{width:46,height:46,background:"var(--roseL)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Ic icon={DIcon} size={22} color="var(--rose)"/></div>
                 <div style={{flex:1}}>
