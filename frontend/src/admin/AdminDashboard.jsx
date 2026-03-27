@@ -19,7 +19,7 @@ import PromoBannerEditor from "./PromoBannerEditor";
 import MarqueeBannerEditor from "./MarqueeBannerEditor";
 import LogViewer from "./LogViewer";
 import AboutPageEditor  from "./AboutPageEditor";
-import { BarChart2, Edit, FileText, Gift, Layers, LayoutDashboard, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, TicketPercent, TrendingUp, Users, Warehouse, Zap } from "lucide-react";
+import { BarChart2, Edit, FileText, Gift, Layers, LayoutDashboard, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, Tag, TrendingUp, Users, Warehouse, Zap } from "lucide-react";
 
 const AdminDashboard = ({ setPage, toast }) => {
   const {isMobile}=useBreakpoint();
@@ -73,7 +73,7 @@ const AdminDashboard = ({ setPage, toast }) => {
   const delCoupon=async id=>{await apiDeleteCoupon(id);setCoupons(cs=>cs.filter(c=>c._id!==id));toast("Deleted");};
 
   const goTab=k=>{setTab(k);if(isMobile)setDrawer(false);};
-  const SIDE=[["overview",LayoutDashboard,"Overview"],["orders",ShoppingBag,"Orders"],["products",Package,"Products"],["add-product",PlusCircle,"Add Product"],["inventory",Warehouse,"Inventory"],["customers",Users,"Customers"],["analytics",BarChart2,"Analytics"],["coupons",TicketPercent,"Coupons"],["categories",Layers,"Categories"],["promo",Gift,"Offer Banner"],["marquee",Zap,"Marquee Banner"],["about-editor",FileText,"About Page"],["settings",Settings,"Site Settings"],["logs",BarChart2,"Log Audit"]];
+  const SIDE=[["overview",LayoutDashboard,"Overview"],["orders",ShoppingBag,"Orders"],["products",Package,"Products"],["add-product",PlusCircle,"Add Product"],["inventory",Warehouse,"Inventory"],["customers",Users,"Customers"],["analytics",BarChart2,"Analytics"],["coupons",Tag,"Coupons"],["categories",Layers,"Categories"],["promo",Gift,"Offer Banner"],["marquee",Zap,"Marquee Banner"],["about-editor",FileText,"About Page"],["settings",Settings,"Site Settings"],["logs",BarChart2,"Log Audit"]];
   const iStyle={background:"var(--ivory2)",border:"1.5px solid var(--border2)",color:"var(--text)",padding:"10px 12px",fontSize:13,borderRadius:12,outline:"none",width:"100%",boxSizing:"border-box",fontWeight:500};
   const lStyle={display:"block",fontSize:10,fontWeight:700,color:"var(--muted)",letterSpacing:.5,textTransform:"uppercase",marginBottom:6};
 
