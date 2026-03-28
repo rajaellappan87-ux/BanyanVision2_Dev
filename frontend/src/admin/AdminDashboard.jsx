@@ -62,9 +62,21 @@ const AdminDashboard = ({ setPage, toast }) => {
       filesToUpload.forEach(f=>fd.append("images",f));
       // Tell backend which existing images to keep (those not deleted via × button)
       if(editId) fd.append("keptImages", JSON.stringify(exImgs));
-      if(editId){await apiUpdateProduct(editId,fd);toast("Product updated!");}
-      else{await apiCreateProduct(fd);toast("Product created!");}
-      const r=await apiGetProducts({limit:50});setProducts(Array.isArray(r?.data?.products)?r.data.products:[]);resetP();
+      if(editId){
+        await apiUpdateProduct(editId,fd);
+        toast("Product updated! ✓");
+        const r=await apiGetProducts({limit:50});
+        setProducts(Array.isArray(r?.data?.products)?r.data.products:[]);
+        resetP();
+        setTab("products"); // ← go back to products list after update
+      } else {
+        await apiCreateProduct(fd);
+        toast("Product created! ✓");
+        const r=await apiGetProducts({limit:50});
+        setProducts(Array.isArray(r?.data?.products)?r.data.products:[]);
+        resetP(); // ← clear all fields and images for next creation
+        // stay on add-product tab ready for next product
+      }
     }catch(err){toast(err.response?.data?.message||"Save failed","error");}
     setSaving(false);
   };
