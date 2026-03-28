@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Ic } from "../../utils/helpers";
-import { Crop, Image as ImageIcon, Scissors, ZoomIn } from "lucide-react";
+import { Crop, Scissors, ZoomIn } from "lucide-react";
 
 /* ── Image Cropper Modal ─────────────────────────────────────────────────────── */
 const CROP_W = 900;
@@ -180,19 +180,19 @@ const ImageCropModal = ({ src, onDone, onCancel }) => {
 /* ── Image Uploader with Crop ────────────────────────────────────────────────── */
 const ImageUploader = ({ existingImages=[], onFilesChange, onDeleteExisting }) => {
   const [previews,  setPreviews]  = useState([]);  // [{url, file}]
-  const [files,     setFiles]     = useState([]);
-  const [cropSrc,   setCropSrc]   = useState(null); // raw src waiting to be cropped
-  const [cropIdx,   setCropIdx]   = useState(null); // index to replace, or null = new
+  const [cropSrc,   setCropSrc]   = useState(null);
+  const [cropIdx,   setCropIdx]   = useState(null);
   const ref = useRef();
+
+  // Use ref to always have current files without stale closure issues
+  const filesRef = useRef([]);
 
   const tot = existingImages.length + previews.length;
 
-  // When files are selected → open cropper one by one
   const pick = e => {
     const sel = Array.from(e.target.files);
     e.target.value = "";
     if (tot + sel.length > 6) { alert("Maximum 6 images allowed"); return; }
-    // Queue first file for cropping
     if (sel.length > 0) {
       const reader = new FileReader();
       reader.onload = ev => setCropSrc({ src: ev.target.result, queue: sel.slice(1) });
@@ -202,13 +202,15 @@ const ImageUploader = ({ existingImages=[], onFilesChange, onDeleteExisting }) =
 
   const onCropDone = (croppedFile, croppedDataUrl) => {
     const { queue } = cropSrc;
-    // Add cropped image
-    const newPreviews = [...previews, { url: croppedDataUrl, file: croppedFile }];
-    const newFiles    = [...files, croppedFile];
-    setPreviews(newPreviews);
-    setFiles(newFiles);
+
+    // Always read from ref — never from stale closure
+    const newFiles    = [...filesRef.current, croppedFile];
+    filesRef.current  = newFiles;
+
+    setPreviews(prev => [...prev, { url: croppedDataUrl, file: croppedFile }]);
     onFilesChange(newFiles);
-    // Process next in queue if any
+
+    // Process next in queue
     if (queue && queue.length > 0) {
       const reader = new FileReader();
       reader.onload = ev => setCropSrc({ src: ev.target.result, queue: queue.slice(1) });
@@ -223,7 +225,6 @@ const ImageUploader = ({ existingImages=[], onFilesChange, onDeleteExisting }) =
     setCropIdx(null);
   };
 
-  // Re-crop an existing new preview
   const reCrop = i => {
     setCropIdx(i);
     const reader = new FileReader();
@@ -233,19 +234,19 @@ const ImageUploader = ({ existingImages=[], onFilesChange, onDeleteExisting }) =
 
   const onReCropDone = (croppedFile, croppedDataUrl) => {
     const i = cropSrc.recropIdx;
-    const newPreviews = previews.map((p,j) => j===i ? { url: croppedDataUrl, file: croppedFile } : p);
-    const newFiles    = files.map((f,j)    => j===i ? croppedFile : f);
-    setPreviews(newPreviews);
-    setFiles(newFiles);
+    const newFiles = filesRef.current.map((f,j) => j===i ? croppedFile : f);
+    filesRef.current = newFiles;
+    setPreviews(prev => prev.map((p,j) => j===i ? { url: croppedDataUrl, file: croppedFile } : p));
     onFilesChange(newFiles);
     setCropSrc(null);
     setCropIdx(null);
   };
 
   const rem = i => {
-    const np = previews.filter((_,j) => j!==i);
-    const nf = files.filter((_,j)    => j!==i);
-    setPreviews(np); setFiles(nf); onFilesChange(nf);
+    const newFiles = filesRef.current.filter((_,j) => j!==i);
+    filesRef.current = newFiles;
+    setPreviews(prev => prev.filter((_,j) => j!==i));
+    onFilesChange(newFiles);
   };
 
   return (

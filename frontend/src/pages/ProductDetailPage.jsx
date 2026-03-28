@@ -151,7 +151,7 @@ const ProductDetailPage = ({ productId, setPage, toast }) => {
 
         {/* Tabs */}
         <div style={{display:"flex",borderBottom:"2px solid var(--border)",marginBottom:28,overflowX:"auto",gap:2}}>
-          {["description","reviews","size guide","shipping"].map(t=>(
+          {["description","reviews","shipping"].map(t=>(
             <button key={t} onClick={()=>setTab(t)} style={{padding:"12px 20px",background:tab===t?"var(--roseL)":"transparent",border:"none",borderBottom:tab===t?"3px solid var(--rose)":"3px solid transparent",borderRadius:"10px 10px 0 0",color:tab===t?"var(--rose)":"var(--muted)",fontWeight:700,cursor:"pointer",fontSize:12,whiteSpace:"nowrap",marginBottom:-2,transition:"all .2s",textTransform:"capitalize"}}>
               {t}
             </button>
@@ -198,19 +198,6 @@ const ProductDetailPage = ({ productId, setPage, toast }) => {
                 <button className="btn btn-rose" onClick={submitRev} style={{marginTop:12,padding:"12px 28px",fontSize:13}}>Submit Review</button>
               </div>
             </div>
-          </div>
-        )}
-
-        {tab==="size guide"&&(
-          <div style={{overflowX:"auto"}}>
-            <table style={{borderCollapse:"separate",borderSpacing:0,fontSize:13,minWidth:360,borderRadius:"14px",overflow:"hidden",border:"1.5px solid var(--border)"}}>
-              <thead><tr style={{background:"linear-gradient(135deg,var(--rose),var(--saffron))"}}>{["Size","Chest","Waist","Hip"].map(h=><th key={h} style={{padding:"13px 22px",textAlign:"left",color:"#fff",fontSize:11,fontWeight:700,letterSpacing:1}}>{h} (in)</th>)}</tr></thead>
-              <tbody>{[["XS","32","26","34"],["S","34","28","36"],["M","36","30","38"],["L","38","32","40"],["XL","40","34","42"],["XXL","42","36","44"]].map((row,i)=>(
-                <tr key={row[0]} style={{background:i%2===0?"#fff":"var(--ivory2)"}}>
-                  {row.map((c,j)=><td key={j} style={{padding:"12px 22px",color:j===0?"var(--rose)":"var(--text2)",fontWeight:j===0?800:400,borderBottom:"1px solid var(--border)"}}>{c}</td>)}
-                </tr>
-              ))}</tbody>
-            </table>
           </div>
         )}
 

@@ -114,28 +114,51 @@ productRouter.post("/", protect, adminOnly, upload.array("images", 6), async (re
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-// PUT /api/products/:id  (admin) — can add/replace images
+// PUT /api/products/:id  (admin) — merges new images with kept existing images
 productRouter.put("/:id", protect, adminOnly, upload.array("images", 6), async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, message: "Product not found" });
 
-    // Delete old Cloudinary images if new ones uploaded
-    const newImages = req.files?.map(f => ({ url: f.path, public_id: f.filename })) || [];
-    if (newImages.length > 0) {
-      for (const img of product.images) { await cloudinary.uploader.destroy(img.public_id); }
+    const newImages = (req.files || []).map(f => ({ url: f.path, public_id: f.filename }));
+
+    // keptImages: existing images the admin chose to KEEP (not deleted via × button)
+    // The frontend sends keptImages as a JSON string of [{url, public_id}]
+    let keptImages = [];
+    if (req.body.keptImages) {
+      try { keptImages = JSON.parse(req.body.keptImages); } catch {}
+    } else {
+      // Fallback: if no keptImages sent, keep all existing (backward compat)
+      keptImages = product.images || [];
     }
 
+    // Delete Cloudinary images that were removed by admin (not in keptImages)
+    const keptIds = new Set(keptImages.map(i => i.public_id));
+    for (const img of product.images) {
+      if (!keptIds.has(img.public_id)) {
+        await cloudinary.uploader.destroy(img.public_id).catch(() => {});
+      }
+    }
+
+    // Final images = kept existing + newly uploaded (max 6)
+    const mergedImages = [...keptImages, ...newImages].slice(0, 6);
+
     const updates = { ...req.body };
-    if (newImages.length > 0) updates.images = newImages;
+    updates.images = mergedImages;
     if (req.body.sizes)  updates.sizes  = JSON.parse(req.body.sizes);
     if (req.body.colors) updates.colors = JSON.parse(req.body.colors);
     if (req.body.price)  updates.price  = Number(req.body.price);
     if (req.body.stock)  updates.stock  = Number(req.body.stock);
+    // Remove non-schema fields
+    delete updates.keptImages;
 
     const updated = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
+    log.info("app", "Product updated", { id: req.params.id, imageCount: mergedImages.length });
     res.json({ success: true, product: updated });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+  } catch (err) {
+    log.error("app", "Product update failed", { message: err.message }, err);
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // DELETE /api/products/:id  (admin)
