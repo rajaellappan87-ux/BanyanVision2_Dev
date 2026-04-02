@@ -3,7 +3,7 @@ const { expect } = require('@playwright/test');
 const ADMIN = { email: 'admin@banyanvision.com', password: 'admin123' };
 const USER  = { email: 'user@test.com',          password: 'user123'  };
 
-// Go to login page
+// Navigate to login page by clicking the header Sign In button
 async function goToLogin(page) {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
@@ -23,24 +23,23 @@ async function login(page, { email, password }) {
   ).toHaveCount(0, { timeout: 10000 });
 }
 
-// Open user dropdown — the avatar button shows user's first initial in a circle
-// It is the only button in header that has a coloured circle div inside it
+// Open user dropdown — circular gradient avatar button in header
 async function openUserMenu(page) {
   const avatarBtn = page.locator('header button').filter({
-    has: page.locator('div[style*="background: linear-gradient"], div[style*="background:linear-gradient"]')
+    has: page.locator('div[style*="border-radius: 50%"], div[style*="border-radius:50%"], div[style*="background: linear-gradient"], div[style*="background:linear-gradient"]')
   }).first();
   await avatarBtn.click();
   await page.waitForTimeout(400);
 }
 
-// Navigate to admin and wait for dashboard
+// Navigate to admin panel and wait for dashboard
 async function openAdmin(page) {
   await login(page, ADMIN);
   await page.click('button:has-text("Admin")');
   await expect(page.locator('text=Dashboard Overview')).toBeVisible({ timeout: 10000 });
 }
 
-// Go to shop and wait for cards
+// Navigate to shop and wait for product cards
 async function goToShop(page) {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
@@ -49,7 +48,7 @@ async function goToShop(page) {
   await page.waitForTimeout(500);
 }
 
-// Add first product to cart via hover
+// Add first product to cart via hover → Add to Bag
 async function addToCart(page) {
   await goToShop(page);
   const card = page.locator('.card-base').first();
@@ -59,11 +58,10 @@ async function addToCart(page) {
   await page.waitForTimeout(600);
 }
 
-// Open cart page (click cart icon in header)
+// Open cart page by clicking the cart icon button in header
+// Cart button has a badge span with position:relative styling on the button
 async function openCart(page) {
-  // Cart button is the button containing an SVG bag path
-  // It is in header, after the wishlist button
-  await page.locator('header').locator('button[style*="relative"]').first().click();
+  await page.locator('header button[style*="relative"]').first().click();
   await page.waitForTimeout(800);
 }
 

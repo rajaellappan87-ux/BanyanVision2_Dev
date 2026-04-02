@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "BanyanVision",
+    "slug": "banyanvision",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/icon.png",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.banyanvision.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/adaptive-icon.png",
+        "backgroundColor": "#FDF8F3"
+      },
+      "package": "com.banyanvision.app",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./src/assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FDF8F3"
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "scheme": "banyanvision",
+    "extra": {
+      "eas": {
+        "projectId": "17016b3e-7626-496a-97fd-9ccefde81de3"
+      }
+    },
+    "owner": "raja_david"
+  }
+}

@@ -25,6 +25,9 @@ desktop.ini
 # VS Code
 .vscode/settings.json
 
+# Claude Code (AI assistant settings — local only)
+.claude/
+
 # Uploads (local only)
 backend/uploads/
 
