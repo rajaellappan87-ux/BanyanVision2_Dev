@@ -15,7 +15,7 @@ const ProductDetailPage = ({ productId, setPage, toast }) => {
   const {isMobile}=useBreakpoint();
   const st=useSettings();
   const {user}=useAuth();
-  const {addToCart}=useCart();
+  const {addToCart,cart}=useCart();
   const [data,setData]=useState(null);
   const [revs,setRevs]=useState([]);
   const [loading,setLoading]=useState(true);
@@ -129,9 +129,21 @@ const ProductDetailPage = ({ productId, setPage, toast }) => {
               </span>
             </div>
 
-            <div style={{display:"flex",gap:10,marginBottom:22}}>
-              <button className="btn btn-rose" onClick={()=>{addToCart(data,qty,selSize,selColor);toast(`${data.name} added!`);}} style={{flex:1,padding:"15px 0",fontSize:14}}>
+            <div style={{display:"flex",gap:10,marginBottom:22,flexWrap:"wrap"}}>
+              <button className="btn btn-outline" onClick={()=>{
+                if(data.sizes?.length&&!["Free Size","One Size"].includes(data.sizes[0])&&!selSize){toast("Please select a size","error");return;}
+                addToCart(data,qty,selSize,selColor);
+                toast(`${data.name} added to bag!`);
+              }} style={{flex:1,padding:"15px 0",fontSize:14,minWidth:130}}>
                 Add to Bag
+              </button>
+              <button className="btn btn-rose" onClick={()=>{
+                if(data.sizes?.length&&!["Free Size","One Size"].includes(data.sizes[0])&&!selSize){toast("Please select a size","error");return;}
+                addToCart(data,qty,selSize,selColor);
+                if(!user){setPage("login");return;}
+                setPage("checkout");
+              }} style={{flex:1.2,padding:"15px 0",fontSize:14,minWidth:140}}>
+                ⚡ Buy Now
               </button>
               <button onClick={toggleWish} style={{width:52,background:wished?"var(--roseL)":"var(--ivory2)",border:`2px solid ${wished?"var(--rose)":"var(--border2)"}`,borderRadius:12,color:wished?"var(--rose)":"var(--muted)",fontSize:22,cursor:"pointer",transition:"all .2s"}}>
                 {wished?<Ic icon={Heart} size={18} color="var(--rose)" style={{fill:"var(--rose)"}}/>:<Ic icon={Heart} size={18}/>}

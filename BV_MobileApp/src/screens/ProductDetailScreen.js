@@ -96,7 +96,8 @@ export default function ProductDetailScreen() {
   const handleBuyNow = () => {
     if (!requireSize()) return;
     addToCart(product, qty, size, color);
-    nav.navigate('Cart');
+    if (!user) { nav.navigate('Auth', { screen: 'Login' }); return; }
+    nav.navigate('Checkout');
   };
 
   return (
@@ -248,7 +249,7 @@ export default function ProductDetailScreen() {
             </TouchableOpacity>
             <TouchableOpacity onPress={handleBuyNow} style={{ flex: 1.5 }}>
               <LinearGradient colors={Colors.gradRose} style={s.buyBtn}>
-                <Text style={s.buyBtnText}>Buy Now</Text>
+                <Text style={s.buyBtnText}>⚡ Buy Now</Text>
               </LinearGradient>
             </TouchableOpacity>
           </>

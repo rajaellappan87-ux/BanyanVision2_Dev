@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/theme';
 import { useCart } from '../context/CartContext';
 
@@ -51,18 +52,22 @@ function TabIcon({ emoji, label, focused, cartCount }) {
 // ── Bottom Tab Navigator ──────────────────────────────────────────────────────
 function MainTabs() {
   const { cartCount } = useCart();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
+        // Push screen content below status bar
+        contentStyle: { paddingTop: insets.top, backgroundColor: Colors.ivory },
         tabBarStyle: {
           backgroundColor: '#fff',
           borderTopColor: Colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          // Respect bottom home indicator / gesture bar
+          height: (Platform.OS === 'ios' ? 64 : 60) + insets.bottom,
+          paddingBottom: insets.bottom || 8,
           paddingTop: 4,
           elevation: 8,
           shadowColor: '#1A0A00',
@@ -125,11 +130,14 @@ function AuthStack() {
 
 // ── Root Stack ────────────────────────────────────────────────────────────────
 function RootStack() {
+  const insets = useSafeAreaInsets();
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: Colors.ivory },
+        // Stack screens with a header handle top inset automatically via the header
+        // Bottom inset is handled per-screen via paddingBottom on scroll content
       }}
     >
       {/* Main tabs */}

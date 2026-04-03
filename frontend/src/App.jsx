@@ -55,7 +55,7 @@ function AppShell() {
   const productId = isProduct ? page.replace("product-", "") : null;
   const successId = isSuccess ? page.replace("order-success-", "") : null;
   const knownPages = ["home","shop","about","cart","checkout","orders","wishlist",
-                      "profile","login","admin","privacy","terms","refund","shipping","contact"];
+                      "profile","login","admin","privacy","terms","refund","shipping"];
   const is404 = !knownPages.includes(page) && !isProduct && !isSuccess;
 
   if (loading) return (
