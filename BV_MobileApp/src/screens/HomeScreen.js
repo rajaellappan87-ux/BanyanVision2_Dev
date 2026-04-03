@@ -55,9 +55,12 @@ export default function HomeScreen() {
   const whyItems = [
     { icon: '🎨', title: 'Authentic',     desc: 'Verified Indian artisans only' },
     { icon: '🌿', title: 'Sustainable',   desc: 'Eco-conscious packaging' },
-    { icon: '⚡', title: 'Fast Delivery', desc: `${siteSettings.standardDays || '3–7 business days'}` },
+    { icon: '⚡', title: 'Fast Delivery', desc: siteSettings.standardDays || '3–7 business days' },
+    ...(siteSettings.freeShippingAbove > 0
+      ? [{ icon: '🚚', title: 'Free Delivery', desc: `Free on orders above ₹${siteSettings.freeShippingAbove}` }]
+      : []),
     ...(siteSettings.returnsEnabled
-      ? [{ icon: '❤️', title: 'Free Returns', desc: `${siteSettings.returnDays || 7}-day easy returns` }]
+      ? [{ icon: '❤️', title: 'Free Returns',  desc: `${siteSettings.returnDays || 7}-day easy returns` }]
       : []),
   ];
 

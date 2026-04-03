@@ -1,26 +1,33 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, Alert, ActivityIndicator, Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Spacing, Radius, Shadow } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
-import { apiUpdateProfile } from '../api';
+import { apiUpdateProfile, apiGetConfig } from '../api';
 import AuthPrompt from '../components/common/AuthPrompt';
 
 export default function ProfileScreen() {
   const nav = useNavigation();
   const { user, logout, updateUser } = useAuth();
 
-  const [editing, setEditing] = useState(false);
-  const [saving,  setSaving]  = useState(false);
+  const [editing,      setEditing]      = useState(false);
+  const [saving,       setSaving]       = useState(false);
+  const [siteSettings, setSiteSettings] = useState({});
   const [form, setForm] = useState({
     name:    user?.name    || '',
     phone:   user?.phone   || '',
     address: user?.address || '',
   });
+
+  useEffect(() => {
+    apiGetConfig('siteSettings')
+      .then(r => { if (r.data?.value) setSiteSettings(r.data.value); })
+      .catch(() => {});
+  }, []);
 
   const save = async () => {
     if (!form.name.trim()) { Alert.alert('Name is required'); return; }
@@ -138,6 +145,58 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Contact us */}
+      {(siteSettings.whatsapp || siteSettings.email || siteSettings.phone) && (
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Contact Us</Text>
+          {siteSettings.whatsapp ? (
+            <TouchableOpacity style={s.contactRow} onPress={() =>
+              Linking.openURL(`https://wa.me/${siteSettings.whatsapp}?text=${encodeURIComponent(siteSettings.whatsappMsg || 'Hi BanyanVision!')}`)
+            }>
+              <Text style={s.contactIcon}>💬</Text>
+              <View>
+                <Text style={s.contactLabel}>WhatsApp Us</Text>
+                <Text style={s.contactVal}>+{siteSettings.whatsapp}</Text>
+              </View>
+            </TouchableOpacity>
+          ) : null}
+          {siteSettings.email ? (
+            <TouchableOpacity style={s.contactRow} onPress={() => Linking.openURL(`mailto:${siteSettings.email}`)}>
+              <Text style={s.contactIcon}>✉️</Text>
+              <View>
+                <Text style={s.contactLabel}>Email</Text>
+                <Text style={s.contactVal}>{siteSettings.email}</Text>
+              </View>
+            </TouchableOpacity>
+          ) : null}
+          {siteSettings.phone ? (
+            <TouchableOpacity style={s.contactRow} onPress={() => Linking.openURL(`tel:${siteSettings.phone}`)}>
+              <Text style={s.contactIcon}>📞</Text>
+              <View>
+                <Text style={s.contactLabel}>Call Us</Text>
+                <Text style={s.contactVal}>{siteSettings.phone}</Text>
+              </View>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      )}
+
+      {/* Policies */}
+      <View style={s.card}>
+        <Text style={s.cardTitle}>Legal & Policies</Text>
+        {[
+          { label: 'Privacy Policy',    url: 'https://www.banyanvision.com/privacy.html' },
+            { label: 'Terms of Service',  url: 'https://www.banyanvision.com/terms.html' },
+          { label: 'Refund & Returns',  url: 'https://www.banyanvision.com/refund.html' },
+          { label: 'Shipping Policy',   url: 'https://www.banyanvision.com/shipping.html' },
+        ].map(item => (
+          <TouchableOpacity key={item.label} style={s.policyRow} onPress={() => Linking.openURL(item.url)}>
+            <Text style={s.policyLabel}>{item.label}</Text>
+            <Text style={s.policyArrow}>→</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       {/* Sign out */}
       <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
         <Text style={s.logoutTxt}>Sign Out</Text>
@@ -178,4 +237,11 @@ const s = StyleSheet.create({
   logoutBtn:       { marginHorizontal: Spacing.md, borderWidth: 2, borderColor: Colors.error, borderRadius: Radius.lg, paddingVertical: 14, alignItems: 'center', marginBottom: 12 },
   logoutTxt:       { color: Colors.error, fontSize: 15, fontWeight: '700' },
   versionTxt:      { textAlign: 'center', fontSize: 11, color: Colors.muted, marginBottom: 8 },
+  contactRow:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  contactIcon:     { fontSize: 22, width: 30, textAlign: 'center' },
+  contactLabel:    { fontSize: 10, color: Colors.muted, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  contactVal:      { fontSize: 13, color: Colors.rose, fontWeight: '600', marginTop: 2 },
+  policyRow:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  policyLabel:     { fontSize: 14, color: Colors.text2, fontWeight: '500' },
+  policyArrow:     { fontSize: 16, color: Colors.muted },
 });

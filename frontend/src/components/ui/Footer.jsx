@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useBreakpoint } from "../../hooks";
 import { useSettings } from "../../store/contentStore";
+import { useCatConfig } from "../../store/catStore";
 import { Ic } from "../../utils/helpers";
 import { Mail, Phone } from "lucide-react";
 import { InstagramIcon, FacebookIcon, YoutubeIcon, TwitterIcon } from "../../utils/helpers";
@@ -44,6 +45,7 @@ const CookieBanner = () => {
 const Footer = ({ setPage }) => {
   const {isMobile}=useBreakpoint();
   const st=useSettings();
+  const catCfg=useCatConfig();
   const lnk={marginBottom:10,fontSize:13,color:"rgba(255,255,255,.5)",cursor:"pointer",lineHeight:1.6,fontWeight:400,transition:"color .2s"};
   const hov=e=>e.currentTarget.style.color="var(--rose)";
   const unHov=e=>e.currentTarget.style.color="rgba(255,255,255,.5)";
@@ -99,26 +101,37 @@ const Footer = ({ setPage }) => {
             </div>
             {/* Trust badges */}
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {["Secure Pay",...(st.showFreeDeliveryBadge!==false?["Free Delivery"]:[]),...(st.returnsEnabled?["Easy Returns"]:[]),"★ 4.8 Rating"].map(b=>(
+              {[
+                st.showSecurePayBadge!==false && "Secure Pay",
+                st.freeShippingAbove > 0 && `Free Delivery ₹${st.freeShippingAbove}+`,
+                st.returnsEnabled && `${st.returnDays||7}-Day Returns`,
+                st.showRatingBadge!==false && "★ 4.8 Rating",
+              ].filter(Boolean).map(b=>(
                 <div key={b} style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",padding:"4px 10px",borderRadius:8,fontSize:10,color:"rgba(255,255,255,.55)",fontWeight:600}}>{b}</div>
               ))}
             </div>
           </div>
 
-          {/* Shop links */}
+          {/* Shop links — live from admin Category Manager */}
           <div>
             <div style={{fontSize:10,letterSpacing:2.5,color:"var(--rose)",textTransform:"uppercase",fontWeight:800,marginBottom:16}}>Shop</div>
-            {["Kurtas & Sets","Sarees","Lehengas","Western Wear","Accessories","Men's Wear","Bags","Fancy Jewelry"].map(link=>(
-              <div key={link} onClick={()=>setPage("shop")} style={lnk} onMouseEnter={hov} onMouseLeave={unHov}>{link}</div>
+            {Object.keys(catCfg).map(name=>(
+              <div key={name} onClick={()=>setPage("shop")} style={lnk} onMouseEnter={hov} onMouseLeave={unHov}>{name}</div>
             ))}
           </div>
 
           {/* Company */}
           <div>
             <div style={{fontSize:10,letterSpacing:2.5,color:"var(--rose)",textTransform:"uppercase",fontWeight:800,marginBottom:16}}>Company</div>
-            {[["About Us","about"],["Our Story","about"],["Contact Us","contact"]].map(([l,p])=>(
+            {[["About Us","about"],["Our Story","about"]].map(([l,p])=>(
               <div key={l} onClick={()=>setPage(p)} style={lnk} onMouseEnter={hov} onMouseLeave={unHov}>{l}</div>
             ))}
+            {st.whatsapp&&(
+              <a href={`https://wa.me/${st.whatsapp}?text=${encodeURIComponent(st.whatsappMsg||"Hi BanyanVision!")}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{...lnk,display:"block",textDecoration:"none"}}
+                onMouseEnter={hov} onMouseLeave={unHov}>Contact Us</a>
+            )}
           </div>
 
           {/* Help */}
