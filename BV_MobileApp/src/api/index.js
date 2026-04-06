@@ -11,8 +11,9 @@ export const apiGetProducts   = (params) => client.get('/products', { params });
 export const apiGetProduct    = (id)     => client.get(`/products/${id}`);
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
-export const apiCreateReview  = (data)   => client.post('/reviews', data);
-export const apiMarkHelpful   = (id)     => client.put(`/reviews/${id}/helpful`);
+export const apiCreateReview  = (data)        => client.post('/reviews', data);
+export const apiMarkHelpful   = (id)          => client.put(`/reviews/${id}/helpful`);
+export const apiGetTopReviews = (limit = 5)   => client.get('/reviews/top', { params: { limit } });
 
 // ── Orders ────────────────────────────────────────────────────────────────────
 export const apiCreatePayment = (data)   => client.post('/orders/create-payment', data);

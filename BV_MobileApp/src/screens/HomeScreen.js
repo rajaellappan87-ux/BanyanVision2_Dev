@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { apiGetProducts, apiGetConfig } from '../api';
+import { apiGetProducts, apiGetConfig, apiGetTopReviews } from '../api';
 import { Colors, Spacing, Radius, Shadow } from '../constants/theme';
 import { DEFAULT_CATEGORIES } from '../constants/categories';
 import ProductCard from '../components/ProductCard';
@@ -21,18 +21,20 @@ export default function HomeScreen() {
   const [promo,       setPromo]       = useState(null);
   const [siteSettings,setSiteSettings]= useState({});
   const [categories,  setCategories]  = useState(DEFAULT_CATEGORIES);
+  const [topReviews,  setTopReviews]  = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [refreshing,  setRefreshing]  = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [feat, trend, mqRes, catRes, promoRes, settingsRes] = await Promise.allSettled([
+      const [feat, trend, mqRes, catRes, promoRes, settingsRes, revRes] = await Promise.allSettled([
         apiGetProducts({ featured: true,  limit: 8 }),
         apiGetProducts({ trending: true,  limit: 8 }),
         apiGetConfig('marquee'),
         apiGetConfig('categories'),
         apiGetConfig('offer'),
         apiGetConfig('siteSettings'),
+        apiGetTopReviews(5),
       ]);
       if (feat.status     === 'fulfilled') setFeatured(feat.value.data.products   || []);
       if (trend.status    === 'fulfilled') setTrending(trend.value.data.products  || []);
@@ -40,6 +42,7 @@ export default function HomeScreen() {
       if (catRes.status   === 'fulfilled' && catRes.value.data.value) setCategories(catRes.value.data.value);
       if (promoRes.status === 'fulfilled') setPromo(promoRes.value.data.value);
       if (settingsRes.status === 'fulfilled') setSiteSettings(settingsRes.value.data.value || {});
+      if (revRes.status   === 'fulfilled') setTopReviews(revRes.value.data.reviews || []);
     } catch {}
     setLoading(false);
     setRefreshing(false);
@@ -205,6 +208,38 @@ export default function HomeScreen() {
         </LinearGradient>
       )}
 
+      {/* ── Top Reviews ── */}
+      {topReviews.length > 0 && (
+        <View style={s.section}>
+          <Text style={s.sectionSub}>HAPPY CUSTOMERS</Text>
+          <Text style={[s.sectionTitle, { textAlign: 'center', marginBottom: Spacing.lg }]}>
+            What Our <Text style={{ color: Colors.rose }}>Customers Say</Text>
+          </Text>
+          {topReviews.map(rv => (
+            <View key={rv._id} style={s.reviewCard}>
+              {/* Stars */}
+              <View style={{ flexDirection: 'row', gap: 3, marginBottom: 8 }}>
+                {[1,2,3,4,5].map(i => (
+                  <Text key={i} style={{ fontSize: 14, color: i <= rv.rating ? '#F9A825' : '#DDD0C8' }}>★</Text>
+                ))}
+              </View>
+              {/* Comment */}
+              <Text style={s.reviewComment}>"{rv.comment}"</Text>
+              {/* Footer */}
+              <View style={s.reviewFooter}>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.reviewName}>{rv.userName || 'Customer'}</Text>
+                  {rv.product?.name ? <Text style={s.reviewProduct}>{rv.product.name}</Text> : null}
+                </View>
+                <View style={s.reviewBadge}>
+                  <Text style={s.reviewBadgeText}>✓ Verified</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* ── Editor's Picks (Featured) ── */}
       {featured.length > 0 && (
         <View style={[s.section, { backgroundColor: '#F5EFE8' }]}>
@@ -303,6 +338,15 @@ const s = StyleSheet.create({
   promoCTA:       { alignSelf: 'flex-start' },
   promoCTAGrad:   { borderRadius: 16, paddingVertical: 13, paddingHorizontal: 28 },
   promoCTAText:   { color: '#fff', fontSize: 15, fontWeight: '700' },
+
+  // Reviews
+  reviewCard:       { marginHorizontal: Spacing.md, marginBottom: 14, backgroundColor: '#fff', borderRadius: 16, padding: 18, borderWidth: 1.5, borderColor: '#F0E6E0', ...Shadow.sm },
+  reviewComment:    { fontSize: 13, color: '#5C4033', lineHeight: 20, fontStyle: 'italic', marginBottom: 12 },
+  reviewFooter:     { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F0E6E0', paddingTop: 10 },
+  reviewName:       { fontSize: 12, fontWeight: '700', color: Colors.dark },
+  reviewProduct:    { fontSize: 11, color: Colors.rose, marginTop: 2 },
+  reviewBadge:      { backgroundColor: '#E8F5E9', borderRadius: 6, paddingHorizontal: 9, paddingVertical: 3 },
+  reviewBadgeText:  { fontSize: 10, fontWeight: '700', color: '#2E7D32', letterSpacing: 0.5 },
 
   // Why Choose
   whyGrid:        { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: Spacing.md },
