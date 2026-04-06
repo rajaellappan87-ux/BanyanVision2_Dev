@@ -211,6 +211,18 @@ reviewRouter.post("/", protect, [body("rating").isInt({ min:1, max:5 }), body("c
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
+// GET /api/reviews/top — top 5 reviews for homepage (rating 4-5, sorted by helpful then date)
+reviewRouter.get("/top", async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 5;
+    const reviews = await Review.find({ rating: { $gte: 4 } })
+      .sort({ helpful: -1, rating: -1, createdAt: -1 })
+      .limit(limit)
+      .populate("product", "name images");
+    res.json({ success: true, reviews });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
 // PUT /api/reviews/:id/helpful
 reviewRouter.put("/:id/helpful", protect, async (req, res) => {
   try {

@@ -77,8 +77,9 @@ export const apiDeleteProduct      = (id)     => API.delete(`/products/${id}`);
 export const apiDeleteProductImage = (pid, pubId) => API.delete(`/products/${pid}/images/${encodeURIComponent(pubId)}`);
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
-export const apiCreateReview  = (data) => API.post("/reviews", data);
-export const apiMarkHelpful   = (id)   => API.put(`/reviews/${id}/helpful`);
+export const apiCreateReview  = (data)         => API.post("/reviews", data);
+export const apiMarkHelpful   = (id)           => API.put(`/reviews/${id}/helpful`);
+export const apiGetTopReviews = (limit = 5)    => API.get("/reviews/top", { params: { limit } });
 
 // ── Orders ────────────────────────────────────────────────────────────────────
 export const apiCreatePayment     = (data)    => API.post("/orders/create-payment", data);

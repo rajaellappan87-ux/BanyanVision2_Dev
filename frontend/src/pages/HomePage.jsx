@@ -3,7 +3,7 @@ import { useBreakpoint } from "../hooks";
 import { useCatConfig } from "../store/catStore";
 import { usePromoData, useMarqueeData, useSettings } from "../store/contentStore";
 import { Ic, fmt, getIcon } from "../utils/helpers";
-import { apiGetProducts } from "../api";
+import { apiGetProducts, apiGetTopReviews } from "../api";
 import ProductCard from "../components/ui/ProductCard";
 import { Leaf, Palette, Zap, Heart } from "lucide-react";
 import { Spinner, SecLabel } from "../components/ui/Common";
@@ -18,12 +18,18 @@ const HomePage = ({ setPage, toast }) => {
   const [featured,setFeatured]=useState([]);
   const [trending,setTrending]=useState([]);
   const [loading,setLoading]=useState(true);
+  const [topReviews,setTopReviews]=useState([]);
 
   useEffect(()=>{
-    Promise.all([apiGetProducts({featured:true,limit:4}),apiGetProducts({trending:true,limit:4})])
-      .then(([f,t])=>{
+    Promise.all([
+      apiGetProducts({featured:true,limit:4}),
+      apiGetProducts({trending:true,limit:4}),
+      apiGetTopReviews(5),
+    ])
+      .then(([f,t,r])=>{
         setFeatured(Array.isArray(f?.data?.products) ? f.data.products : []);
         setTrending(Array.isArray(t?.data?.products) ? t.data.products : []);
+        setTopReviews(Array.isArray(r?.data?.reviews) ? r.data.reviews : []);
       })
       .catch(()=>{ setFeatured([]); setTrending([]); })
       .finally(()=>setLoading(false));
@@ -193,6 +199,42 @@ const HomePage = ({ setPage, toast }) => {
           <button className="btn btn-saffron" onClick={()=>setPage("shop")} style={{padding:isMobile?"14px 30px":"16px 48px",fontSize:16,flexShrink:0,borderRadius:"20px"}}>
             {promo.btnLabel}
           </button>
+        </div>
+      </section>
+      )}
+
+      {/* ─ TOP REVIEWS ─ */}
+      {topReviews.length>0&&(
+      <section style={{background:"var(--ivory)",padding:isMobile?"52px 20px":"80px 80px",borderTop:"1.5px solid var(--border)"}}>
+        <div style={{maxWidth:1440,margin:"0 auto"}}>
+          <div style={{textAlign:"center",marginBottom:40}}>
+            <SecLabel>Happy Customers</SecLabel>
+            <h2 style={{fontFamily:"var(--font-d)",fontSize:isMobile?26:40,fontWeight:700,color:"var(--dark)",marginTop:8}}>What Our <span className="rose-text">Customers Say</span></h2>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":topReviews.length>=3?"repeat(3,1fr)":topReviews.length===2?"repeat(2,1fr)":"1fr",gap:isMobile?14:24}}>
+            {topReviews.map(rv=>(
+              <div key={rv._id} style={{background:"#fff",borderRadius:20,padding:"24px 24px 20px",border:"1.5px solid var(--border)",boxShadow:"0 2px 16px rgba(194,24,91,.06)",display:"flex",flexDirection:"column",gap:10}}>
+                {/* Stars */}
+                <div style={{display:"flex",gap:3}}>
+                  {[1,2,3,4,5].map(i=>(
+                    <span key={i} style={{fontSize:15,color:i<=rv.rating?"#F9A825":"#e0d0c8"}}>★</span>
+                  ))}
+                </div>
+                {/* Comment */}
+                <p style={{fontSize:13,color:"var(--text2)",lineHeight:1.7,flex:1,margin:0,fontStyle:"italic"}}>
+                  "{rv.comment}"
+                </p>
+                {/* Footer */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"1px solid var(--border)",paddingTop:12,marginTop:4}}>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700,color:"var(--dark)"}}>{rv.userName||"Customer"}</div>
+                    {rv.product?.name&&<div style={{fontSize:11,color:"var(--rose)",marginTop:1}}>{rv.product.name}</div>}
+                  </div>
+                  <span style={{fontSize:10,fontWeight:700,letterSpacing:.5,color:"#2E7D32",background:"#E8F5E9",padding:"3px 9px",borderRadius:6}}>✓ Verified</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
       )}
