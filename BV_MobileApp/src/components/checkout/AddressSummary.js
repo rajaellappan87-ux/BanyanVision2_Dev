@@ -14,7 +14,8 @@ export default function AddressSummary({ form, onEdit }) {
     <View style={s.card}>
       <Text style={s.title}>📍 Delivering to</Text>
       <Text style={s.name}>{form.name}</Text>
-      <Text style={s.text}>{form.address}</Text>
+      <Text style={s.text}>{form.addressLine1}</Text>
+      {form.addressLine2 ? <Text style={s.text}>{form.addressLine2}</Text> : null}
       <Text style={s.text}>{form.city}, {form.state} — {form.pin}</Text>
       <Text style={s.text}>📱 {form.phone}</Text>
       <TouchableOpacity onPress={onEdit} style={s.changeBtn}>

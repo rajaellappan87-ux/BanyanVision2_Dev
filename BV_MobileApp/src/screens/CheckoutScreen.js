@@ -12,7 +12,7 @@ import { fmt, getImageUrl } from '../utils/helpers';
 import { validateAddress, hasNoErrors } from '../utils/validation';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { apiCreatePayment, apiCreateOrder } from '../api';
+import { apiCreatePayment, apiCreateOrder, apiUpdateProfile } from '../api';
 
 import StepIndicator  from '../components/checkout/StepIndicator';
 import AddressSummary from '../components/checkout/AddressSummary';
@@ -22,13 +22,14 @@ import FormField      from '../components/common/FormField';
 const STEPS = ['Delivery', 'Payment'];
 
 const ADDRESS_FIELDS = [
-  { key: 'name',    label: 'Full Name',    placeholder: 'As on government ID',    keyboard: 'default' },
-  { key: 'email',   label: 'Email',        placeholder: 'your@email.com',         keyboard: 'email-address' },
-  { key: 'phone',   label: 'Phone Number', placeholder: '10-digit mobile number', keyboard: 'phone-pad' },
-  { key: 'address', label: 'Full Address', placeholder: 'House, Street, Area',    keyboard: 'default', multiline: true },
-  { key: 'city',    label: 'City',         placeholder: 'City',                   keyboard: 'default' },
-  { key: 'state',   label: 'State',        placeholder: 'State',                  keyboard: 'default' },
-  { key: 'pin',     label: 'PIN Code',     placeholder: '6-digit PIN',            keyboard: 'numeric', maxLength: 6 },
+  { key: 'name',         label: 'Full Name',                          placeholder: 'As on government ID',       keyboard: 'default' },
+  { key: 'email',        label: 'Email',                              placeholder: 'your@email.com',            keyboard: 'email-address' },
+  { key: 'phone',        label: 'Phone Number',                       placeholder: '10-digit mobile number',    keyboard: 'phone-pad' },
+  { key: 'addressLine1', label: 'Address Line 1',                     placeholder: 'House No., Street, Area',   keyboard: 'default' },
+  { key: 'addressLine2', label: 'Address Line 2 (Landmark / Flat No.)', placeholder: 'Optional',               keyboard: 'default', optional: true },
+  { key: 'city',         label: 'City',                               placeholder: 'City',                      keyboard: 'default' },
+  { key: 'state',        label: 'State',                              placeholder: 'State',                     keyboard: 'default' },
+  { key: 'pin',          label: 'PIN Code',                           placeholder: '6-digit PIN',               keyboard: 'numeric', maxLength: 6 },
 ];
 
 export default function CheckoutScreen() {
@@ -42,11 +43,14 @@ export default function CheckoutScreen() {
   const [step,       setStep]       = useState(1);
   const [processing, setProcessing] = useState(false);
   const [form, setForm] = useState({
-    name:    user?.name    || '',
-    email:   user?.email   || '',
-    phone:   user?.phone   || '',
-    address: user?.address || '',
-    city: '', state: '', pin: '',
+    name:         user?.name         || '',
+    email:        user?.email        || '',
+    phone:        user?.phone        || '',
+    addressLine1: user?.addressLine1 || '',
+    addressLine2: user?.addressLine2 || '',
+    city:         user?.city         || '',
+    state:        user?.state        || '',
+    pin:          user?.pin          || '',
   });
   const [errors, setErrors] = useState({});
 
@@ -55,10 +59,19 @@ export default function CheckoutScreen() {
     if (errors[key]) setErrors(e => ({ ...e, [key]: '' }));
   };
 
-  const validateStep1 = () => {
+  const validateStep1 = async () => {
     const errs = validateAddress(form);
     setErrors(errs);
-    return hasNoErrors(errs);
+    if (!hasNoErrors(errs)) return false;
+    // Silently save address to profile for next-time pre-fill
+    try {
+      await apiUpdateProfile({
+        name: form.name, phone: form.phone,
+        addressLine1: form.addressLine1, addressLine2: form.addressLine2,
+        city: form.city, state: form.state, pin: form.pin,
+      });
+    } catch (_) {}
+    return true;
   };
 
   const pay = async () => {
@@ -95,7 +108,7 @@ export default function CheckoutScreen() {
             shippingAddress: {
               fullName: form.name,
               phone:    form.phone,
-              address:  form.address,
+              address:  [form.addressLine1, form.addressLine2].filter(Boolean).join(', '),
               city:     form.city,
               state:    form.state,
               pin:      form.pin,
@@ -185,7 +198,7 @@ export default function CheckoutScreen() {
           </TouchableOpacity>
         )}
         <TouchableOpacity
-          onPress={() => step === 1 ? (validateStep1() && setStep(2)) : pay()}
+          onPress={() => step === 1 ? validateStep1().then(ok => ok && setStep(2)) : pay()}
           disabled={processing}
           style={{ flex: 1 }}
         >
