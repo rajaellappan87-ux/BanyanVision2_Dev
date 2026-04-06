@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { Ic, fmt, thumb } from "../utils/helpers";
 import log from "../utils/logger";
-import { apiCreatePayment, apiCreateOrder, apiValidateCoupon } from "../api";
+import { apiCreatePayment, apiCreateOrder, apiValidateCoupon, apiUpdateProfile } from "../api";
 import { AlertTriangle, MapPin, Phone } from "lucide-react";
 
 /* ── CHECKOUT ────────────────────────────────────────────────────────────────── */
@@ -13,12 +13,21 @@ const CheckoutPage = ({ setPage, toast }) => {
   const {user}=useAuth();
   const {cart,subtotal,discountAmt,shipping,total,couponCode,clearCart,freeShippingAbove:shippingFreeAbove}=useCart();
   const [step,setStep]=useState(1);
-  const [form,setForm]=useState({name:user?.name||"",email:user?.email||"",phone:user?.phone||"",address:user?.address||"",city:"",state:"",pin:""});
+  const [form,setForm]=useState({
+    name:user?.name||"",
+    email:user?.email||"",
+    phone:user?.phone||"",
+    addressLine1:user?.addressLine1||"",
+    addressLine2:user?.addressLine2||"",
+    city:user?.city||"",
+    state:user?.state||"",
+    pin:user?.pin||"",
+  });
   const [errors,setErrors]=useState({});
   const [touched,setTouched]=useState({});
   const [processing,setProcessing]=useState(false);
 
-  const REQUIRED={name:"Full Name",email:"Email",phone:"Phone",address:"Full Address",city:"City",state:"State",pin:"PIN Code"};
+  const REQUIRED={name:"Full Name",email:"Email",phone:"Phone",addressLine1:"Address Line 1",city:"City",state:"State",pin:"PIN Code"};
 
   const validate=()=>{
     const errs={};
@@ -27,7 +36,7 @@ const CheckoutPage = ({ setPage, toast }) => {
     else if(!/^[^@]+@[^@]+\.[^@]+$/.test(form.email))errs.email="Enter a valid email";
     if(!form.phone.trim())errs.phone="Phone is required";
     else if(!/^[6-9]\d{9}$/.test(form.phone.replace(/\s/g,"")))errs.phone="Enter a valid 10-digit mobile number";
-    if(!form.address.trim())errs.address="Address is required";
+    if(!form.addressLine1.trim())errs.addressLine1="Address Line 1 is required";
     if(!form.city.trim())errs.city="City is required";
     if(!form.state.trim())errs.state="State is required";
     if(!form.pin.trim())errs.pin="PIN Code is required";
@@ -35,11 +44,19 @@ const CheckoutPage = ({ setPage, toast }) => {
     return errs;
   };
 
-  const handleContinue=()=>{
+  const handleContinue=async()=>{
     const errs=validate();
     setTouched(Object.keys(REQUIRED).reduce((a,k)=>({...a,[k]:true}),{}));
     if(Object.keys(errs).length>0){setErrors(errs);return;}
     setErrors({});
+    // Silently save address to profile so it pre-fills next time
+    try{
+      await apiUpdateProfile({
+        name:form.name, phone:form.phone,
+        addressLine1:form.addressLine1, addressLine2:form.addressLine2,
+        city:form.city, state:form.state, pin:form.pin,
+      });
+    }catch(_){}
     setStep(2);
   };
 
@@ -91,7 +108,7 @@ const CheckoutPage = ({ setPage, toast }) => {
           try{
             const or=await apiCreateOrder({
               items:cart.map(i=>({product:i._id,name:i.name,image:thumb(i.images?.[0]?.url||i.image||""),price:i.price,qty:i.qty,size:i.size,color:i.color,category:i.category})),
-              shippingAddress:{fullName:form.name,phone:form.phone,address:form.address,city:form.city,state:form.state,pin:form.pin},
+              shippingAddress:{fullName:form.name,phone:form.phone,address:[form.addressLine1,form.addressLine2].filter(Boolean).join(", "),city:form.city,state:form.state,pin:form.pin},
               subtotal,discount:discountAmt,shipping,total,coupon:couponCode||null,
               paymentId:res.razorpay_payment_id,
               paymentOrderId:res.razorpay_order_id,
@@ -151,25 +168,38 @@ const CheckoutPage = ({ setPage, toast }) => {
               <div>
                 <h3 style={{fontFamily:"var(--font-d)",color:"var(--dark)",margin:"0 0 20px",fontSize:20,fontWeight:700}}>Delivery Address</h3>
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:14}}>
-                  {[["Full Name","name"],["Email","email"],["Phone","phone"],["Full Address","address"],["City","city"],["State","state"],["PIN Code","pin"]].map(([label,key])=>(
-                    <div key={key} style={{gridColumn:["name","address"].includes(key)&&!isMobile?"1/-1":"auto"}}>
-                      <label style={{display:"block",fontSize:11,fontWeight:700,color:touched[key]&&errors[key]?"#DC2626":"var(--text2)",marginBottom:6,letterSpacing:.3}}>
-                        {label} <span style={{color:"#DC2626"}}>*</span>
+                  {[
+                    ["Full Name","name",false],
+                    ["Email","email",false],
+                    ["Phone","phone",false],
+                    ["Address Line 1","addressLine1",true],
+                    ["Address Line 2 (Landmark / Flat No.)","addressLine2",true],
+                    ["City","city",false],
+                    ["State","state",false],
+                    ["PIN Code","pin",false],
+                  ].map(([label,key,fullRow])=>{
+                    const required=key!=="addressLine2";
+                    const hasErr=touched[key]&&errors[key];
+                    return(
+                    <div key={key} style={{gridColumn:fullRow&&!isMobile?"1/-1":"auto"}}>
+                      <label style={{display:"block",fontSize:11,fontWeight:700,color:hasErr?"#DC2626":"var(--text2)",marginBottom:6,letterSpacing:.3}}>
+                        {label} {required&&<span style={{color:"#DC2626"}}>*</span>}
                       </label>
                       <input
                         value={form[key]}
                         onChange={e=>{setForm(f=>({...f,[key]:e.target.value}));if(touched[key])setErrors(er=>({...er,[key]:""}));}}
                         onBlur={()=>{setTouched(t=>({...t,[key]:true}));const errs=validate();setErrors(errs);}}
                         placeholder={label}
-                        style={{...iStyle,borderColor:touched[key]&&errors[key]?"#DC2626":"var(--border2)",background:touched[key]&&errors[key]?"#FEF2F2":"#fff",boxShadow:touched[key]&&errors[key]?"0 0 0 3px rgba(220,38,38,0.1)":"none"}}
+                        style={{...iStyle,borderColor:hasErr?"#DC2626":"var(--border2)",background:hasErr?"#FEF2F2":"#fff",boxShadow:hasErr?"0 0 0 3px rgba(220,38,38,0.1)":"none"}}
                       />
-                      {touched[key]&&errors[key]&&(
+                      {hasErr&&(
                         <div style={{display:"flex",alignItems:"center",gap:4,marginTop:5,fontSize:11,color:"#DC2626",fontWeight:600}}>
                           <Ic icon={AlertTriangle} size={13} color="#DC2626"/><span>{errors[key]}</span>
                         </div>
                       )}
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
             )}
@@ -187,7 +217,9 @@ const CheckoutPage = ({ setPage, toast }) => {
                   </div>
                 ))}
                 <div style={{marginTop:12,padding:"12px 14px",background:"var(--ivory2)",borderRadius:12,fontSize:12,color:"var(--text2)",lineHeight:1.7,fontWeight:500}}>
-                  <Ic icon={MapPin} size={12}/> {form.name} · {form.phone}<br/>{form.address}, {form.city}, {form.state} - {form.pin}
+                  <Ic icon={MapPin} size={12}/> {form.name} · {form.phone}<br/>
+                  {form.addressLine1}{form.addressLine2?`, ${form.addressLine2}`:""}<br/>
+                  {form.city}, {form.state} - {form.pin}
                 </div>
                 <div style={{marginTop:10,padding:"10px 14px",background:"var(--roseL)",borderRadius:12,fontSize:12,color:"var(--rose)",fontWeight:700}}>
                   Razorpay handles payment securely — your details are never stored.

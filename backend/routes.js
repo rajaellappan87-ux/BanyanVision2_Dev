@@ -57,8 +57,14 @@ authRouter.get("/me", protect, async (req, res) => {
 // PUT /api/auth/profile
 authRouter.put("/profile", protect, async (req, res) => {
   try {
-    const { name, phone, address } = req.body;
-    const user = await User.findByIdAndUpdate(req.user._id, { name, phone, address }, { new: true });
+    const { name, phone, addressLine1, addressLine2, city, state, pin } = req.body;
+    const update = { name, phone };
+    if (addressLine1 !== undefined) update.addressLine1 = addressLine1;
+    if (addressLine2 !== undefined) update.addressLine2 = addressLine2;
+    if (city  !== undefined) update.city  = city;
+    if (state !== undefined) update.state = state;
+    if (pin   !== undefined) update.pin   = pin;
+    const user = await User.findByIdAndUpdate(req.user._id, update, { new: true });
     res.json({ success: true, user });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });

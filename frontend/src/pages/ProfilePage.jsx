@@ -9,7 +9,11 @@ import { Phone, Save } from "lucide-react";
 const ProfilePage = ({ toast }) => {
   const {isMobile}=useBreakpoint();
   const {user,updateUser}=useAuth();
-  const [form,setForm]=useState({name:user?.name||"",email:user?.email||"",phone:user?.phone||"",address:user?.address||""});
+  const [form,setForm]=useState({
+    name:user?.name||"",email:user?.email||"",phone:user?.phone||"",
+    addressLine1:user?.addressLine1||"",addressLine2:user?.addressLine2||"",
+    city:user?.city||"",state:user?.state||"",pin:user?.pin||"",
+  });
   const [saving,setSaving]=useState(false);
   const save=async()=>{setSaving(true);try{const r=await apiUpdateProfile(form);updateUser(r.data.user);toast("Profile saved! ✓");}catch(err){toast(err.response?.data?.message||"Error","error");}setSaving(false);};
   const iStyle={background:"var(--ivory2)",border:"1.5px solid var(--border2)",color:"var(--text)",padding:"12px 14px",fontSize:13,borderRadius:12,outline:"none",width:"100%",boxSizing:"border-box",fontWeight:500};
@@ -25,12 +29,21 @@ const ProfilePage = ({ toast }) => {
               <span className="tag" style={{background:user?.role==="admin"?"var(--purpleL)":"var(--tealL)",color:user?.role==="admin"?"var(--purple)":"var(--teal)",fontSize:10,marginTop:4}}>{user?.role==="admin"?"Admin":"✓ Customer"}</span>
             </div>
           </div>
-          {[["Full Name","name","text"],["Email","email","email"],["Phone","phone","tel"],["Address","address","text"]].map(([label,key,type])=>(
+          {[["Full Name","name","text"],["Email","email","email"],["Phone","phone","tel"]].map(([label,key,type])=>(
             <div key={key} style={{marginBottom:16}}>
               <label style={{display:"block",fontSize:11,fontWeight:700,color:"var(--text2)",marginBottom:6,letterSpacing:.3}}>{label}</label>
               <input type={type} value={form[key]} onChange={e=>setForm(f=>({...f,[key]:e.target.value}))} style={iStyle}/>
             </div>
           ))}
+          <div style={{fontSize:11,fontWeight:700,color:"var(--text2)",marginBottom:8,letterSpacing:.3,marginTop:4}}>Saved Address</div>
+          <div style={{background:"var(--ivory2)",border:"1.5px solid var(--border)",borderRadius:14,padding:16,marginBottom:16,display:"grid",gap:10}}>
+            {[["Address Line 1","addressLine1"],["Address Line 2 (Landmark / Flat No.)","addressLine2"],["City","city"],["State","state"],["PIN Code","pin"]].map(([label,key])=>(
+              <div key={key}>
+                <label style={{display:"block",fontSize:10,fontWeight:700,color:"var(--text2)",marginBottom:5,letterSpacing:.3}}>{label}</label>
+                <input value={form[key]} onChange={e=>setForm(f=>({...f,[key]:e.target.value}))} placeholder={label} style={iStyle}/>
+              </div>
+            ))}
+          </div>
           <button className="btn btn-rose" onClick={save} disabled={saving} style={{width:"100%",padding:"14px 0",fontSize:14,opacity:saving?.75:1}}>{saving?"Saving…":"Save Changes"}</button>
         </div>
       </div>

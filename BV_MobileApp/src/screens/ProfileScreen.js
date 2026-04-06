@@ -18,9 +18,13 @@ export default function ProfileScreen() {
   const [saving,       setSaving]       = useState(false);
   const [siteSettings, setSiteSettings] = useState({});
   const [form, setForm] = useState({
-    name:    user?.name    || '',
-    phone:   user?.phone   || '',
-    address: user?.address || '',
+    name:         user?.name         || '',
+    phone:        user?.phone        || '',
+    addressLine1: user?.addressLine1 || '',
+    addressLine2: user?.addressLine2 || '',
+    city:         user?.city         || '',
+    state:        user?.state        || '',
+    pin:          user?.pin          || '',
   });
 
   useEffect(() => {
@@ -94,19 +98,23 @@ export default function ProfileScreen() {
         </View>
 
         {[
-          { key: 'name',    label: 'Full Name',    keyboard: 'default' },
-          { key: 'phone',   label: 'Phone Number', keyboard: 'phone-pad' },
-          { key: 'address', label: 'Address',      keyboard: 'default', multi: true },
+          { key: 'name',         label: 'Full Name',                            keyboard: 'default' },
+          { key: 'phone',        label: 'Phone Number',                         keyboard: 'phone-pad' },
+          { key: 'addressLine1', label: 'Address Line 1',                       keyboard: 'default' },
+          { key: 'addressLine2', label: 'Address Line 2 (Landmark / Flat No.)', keyboard: 'default', optional: true },
+          { key: 'city',         label: 'City',                                 keyboard: 'default' },
+          { key: 'state',        label: 'State',                                keyboard: 'default' },
+          { key: 'pin',          label: 'PIN Code',                             keyboard: 'numeric' },
         ].map(f => (
           <View key={f.key} style={s.field}>
             <Text style={s.fieldLabel}>{f.label}</Text>
             {editing ? (
               <TextInput
-                style={[s.input, f.multi && s.inputMulti]}
+                style={s.input}
                 value={form[f.key]}
                 onChangeText={v => setForm(prev => ({ ...prev, [f.key]: v }))}
                 keyboardType={f.keyboard}
-                multiline={f.multi}
+                placeholder={f.optional ? 'Optional' : f.label}
                 placeholderTextColor={Colors.muted}
               />
             ) : (
@@ -118,7 +126,11 @@ export default function ProfileScreen() {
         {editing && (
           <View style={s.editActions}>
             <TouchableOpacity style={s.cancelBtn} onPress={() => {
-              setForm({ name: user.name || '', phone: user.phone || '', address: user.address || '' });
+              setForm({
+                name: user.name || '', phone: user.phone || '',
+                addressLine1: user.addressLine1 || '', addressLine2: user.addressLine2 || '',
+                city: user.city || '', state: user.state || '', pin: user.pin || '',
+              });
               setEditing(false);
             }}>
               <Text style={s.cancelBtnTxt}>Cancel</Text>

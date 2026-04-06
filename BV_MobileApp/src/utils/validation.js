@@ -38,13 +38,13 @@ export function validateRequired(value = '', label = 'Field') {
 // Validates the checkout address form and returns an errors object
 export function validateAddress(form) {
   return {
-    name:    validateName(form.name),
-    email:   validateEmail(form.email),
-    phone:   validatePhone(form.phone),
-    address: validateRequired(form.address, 'Address'),
-    city:    validateRequired(form.city, 'City'),
-    state:   validateRequired(form.state, 'State'),
-    pin:     validatePin(form.pin),
+    name:         validateName(form.name),
+    email:        validateEmail(form.email),
+    phone:        validatePhone(form.phone),
+    addressLine1: validateRequired(form.addressLine1, 'Address Line 1'),
+    city:         validateRequired(form.city, 'City'),
+    state:        validateRequired(form.state, 'State'),
+    pin:          validatePin(form.pin),
   };
 }
 
