@@ -7,7 +7,7 @@ echo.
 
 cd /d D:\Raja\BV\SourceCode\BanyanVision2_Dev
 
-git config user.name "RajaE-MindFox"
+git config user.name "rajaellappan87-ux"
 git config user.email "rajaellappan87@gmail.com"
 
 echo [1/4] Files changed:
