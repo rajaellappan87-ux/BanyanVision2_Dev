@@ -1,7 +1,7 @@
 @echo off
 echo.
 echo ================================================
-echo   BanyanVision - Deploy main → prod
+echo   BanyanVision - Deploy main to prod
 echo   Merges tested dev code into prod branch
 echo ================================================
 echo.
