@@ -1,6 +1,12 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
+// DNS resolution fix
+const dns = require("dns");
+if (process.env.NODE_ENV !== "production") {
+  dns.setServers(["2001:4860:4860::8888", "2001:4860:4860::8844", "8.8.8.8", "8.8.4.4"]);
+}
+
 
 // ═══════════════════════════════════════════════════════════════════
 // CRASH GUARDS — MUST be first — prevents process from dying on any
