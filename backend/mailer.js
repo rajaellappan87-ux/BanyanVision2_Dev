@@ -143,7 +143,7 @@ body{margin:0;padding:0;background:#F5F0EA;font-family:'Segoe UI',Arial,sans-ser
   <div class="body">${body}</div>
   <div class="footer">
     <div class="footer-text">
-      © 2025 BanyanVision. Questions? Write to
+      © 2026 BanyanVision. Questions? Write to
       <a href="mailto:${ADMIN_EMAIL}" style="color:${BRAND}">${ADMIN_EMAIL}</a>
     </div>
   </div>

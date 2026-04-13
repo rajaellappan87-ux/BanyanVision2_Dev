@@ -45,12 +45,14 @@ const rateLimit    = require("express-rate-limit");
 // Using path.join(__dirname, ...) ensures modules resolve correctly
 // regardless of which directory you run `node` from
 const { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter, configRouter, logRouter } = require(path.join(__dirname, "routes"));
+const plazaRouter = require(path.join(__dirname, "..", "BV_Plaza", "backend", "plazaRoutes"));
 const { verifySmtp } = require(path.join(__dirname, "mailer"));
 const log = require(path.join(__dirname, "logger"));
 const { errorHandler } = require(path.join(__dirname, "middleware"));
 const { User, Product, Coupon } = require(path.join(__dirname, "models"));
 
 const app = express();
+app.set("trust proxy", 1); // fix express-rate-limit X-Forwarded-For warning
 
 // ─── Security & Performance Middleware ───────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
@@ -63,6 +65,7 @@ const limiter = rateLimit({
   max: isDev ? 2000 : 200,          // dev: 2000/15min  prod: 200/15min
   message: { success:false, message:"Too many requests. Please try again later." },
   skip: (req) => req.path === "/api/health", // never rate-limit health check
+  validate: { xForwardedForHeader: false },  // suppress proxy warning
 });
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -116,6 +119,7 @@ app.use("/api/coupons",  couponRouter);
 app.use("/api/admin",    adminRouter);
 app.use("/api/config",   configRouter);
 app.use("/api/logs",     logRouter);
+app.use("/api/plaza",    plazaRouter);
 
 app.get("/api/health", (_, res) => res.json({ status: "ok", timestamp: new Date(), version: "1.0.0" }));
 
@@ -205,6 +209,9 @@ const seedDatabase = async () => {
 // ─── Start server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
+mongoose.set("autoIndex",  false); // prevent index builds timing out on Atlas M0
+mongoose.set("autoCreate", false); // prevent createCollection() calls on first query
+
 mongoose.connect(process.env.MONGO_URI, {
   // ── Connection resilience ──────────────────────────────
   serverSelectionTimeoutMS: 10000,  // 10s to find a server
@@ -237,10 +244,45 @@ mongoose.connect(process.env.MONGO_URI, {
     await seedDatabase();
     await verifySmtp();
 
-    const server = app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      log.info("system", `Server started`, { port: PORT, env: process.env.NODE_ENV, version: "1.0.0" });
-    });
+    // ── Pre-create BV Plaza collections so first queries don't hang ───────────
+    try {
+      const db = mongoose.connection.db;
+      const plazaCollections = ["stalls","plazaproducts","stallcoupons","bankdetails","wallets","wallettransactions","plazaorders","plazachats","withdrawals"];
+      const existing = (await db.listCollections().toArray()).map(c => c.name);
+      console.log("📋 Existing collections:", existing.join(", "));
+      for (const col of plazaCollections) {
+        if (!existing.includes(col)) {
+          await db.createCollection(col);
+          console.log(`✅ BV Plaza: created collection '${col}'`);
+        } else {
+          console.log(`✔  BV Plaza: collection '${col}' already exists`);
+        }
+      }
+      console.log("✅ BV Plaza: all collections ready");
+    } catch (e) {
+      console.error("❌ BV Plaza collection pre-init error:", e.message, e.stack);
+    }
+
+    // ── Socket.io for BV Plaza real-time features ─────────────────────────────
+    let server;
+    try {
+      const http      = require("http");
+      const { Server } = require("socket.io");
+      const httpServer = http.createServer(app);
+      const io = new Server(httpServer, { cors: { origin: "*", credentials: true } });
+      require(path.join(__dirname, "..", "BV_Plaza", "backend", "plazaSocket"))(io);
+      server = httpServer.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT} (with BV Plaza socket.io)`);
+        log.info("system", `Server started`, { port: PORT, env: process.env.NODE_ENV, version: "1.0.0" });
+      });
+    } catch (socketErr) {
+      // socket.io not installed — run without real-time (install: npm install socket.io)
+      console.warn("⚠️  BV Plaza: socket.io not found. Real-time features disabled. Run: npm install socket.io");
+      server = app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        log.info("system", `Server started`, { port: PORT, env: process.env.NODE_ENV, version: "1.0.0" });
+      });
+    }
 
     // ── Handle port already in use (EADDRINUSE) ──────────────────────────────
     // Happens on Windows when nodemon restarts before OS releases the port.

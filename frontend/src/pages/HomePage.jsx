@@ -7,6 +7,7 @@ import { apiGetProducts, apiGetTopReviews } from "../api";
 import ProductCard from "../components/ui/ProductCard";
 import { Leaf, Palette, Zap, Heart } from "lucide-react";
 import { Spinner, SecLabel } from "../components/ui/Common";
+import BVPlazaPanel from "../BV_Plaza/BVPlazaPanel";
 
 /* ── HOME ────────────────────────────────────────────────────────────────────── */
 const HomePage = ({ setPage, toast }) => {
@@ -49,7 +50,7 @@ const HomePage = ({ setPage, toast }) => {
           {/* Text */}
           <div>
             <div className="u1">
-              <SecLabel>New Arrivals 2025</SecLabel>
+              <SecLabel>New Arrivals 2026</SecLabel>
             </div>
             <h1 className="u2" style={{fontFamily:"var(--font-d)",fontSize:isMobile?"clamp(40px,11vw,56px)":"clamp(50px,5vw,80px)",fontWeight:700,lineHeight:1.05,color:"var(--dark)",marginTop:14,marginBottom:22,letterSpacing:-.5}}>
               Wear India's<br/>
@@ -108,6 +109,9 @@ const HomePage = ({ setPage, toast }) => {
           </div>
         )}
       </section>
+
+      {/* ─ BV PLAZA PANEL — visibility controlled by admin ─ */}
+      <BVPlazaPanel setPage={setPage}/>
 
       {/* ─ CRAFT STRIP — admin-editable via Admin → Marquee Banner ─ */}
       {marquee.active!==false&&(

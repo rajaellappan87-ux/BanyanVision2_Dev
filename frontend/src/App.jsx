@@ -28,6 +28,9 @@ import NotFoundPage         from "./pages/NotFoundPage";
 // Admin
 import AdminDashboard from "./admin/AdminDashboard";
 
+// BV Plaza
+import BVPlazaApp from "./BV_Plaza/BVPlazaApp";
+
 // ─── App Shell ────────────────────────────────────────────────────────────────
 function AppShell() {
   const [page, setPage] = useState("home");
@@ -55,7 +58,7 @@ function AppShell() {
   const productId = isProduct ? page.replace("product-", "") : null;
   const successId = isSuccess ? page.replace("order-success-", "") : null;
   const knownPages = ["home","shop","about","cart","checkout","orders","wishlist",
-                      "profile","login","admin","privacy","terms","refund","shipping"];
+                      "profile","login","admin","privacy","terms","refund","shipping","plaza"];
   const is404 = !knownPages.includes(page) && !isProduct && !isSuccess;
 
   if (loading) return (
@@ -87,6 +90,7 @@ function AppShell() {
         {page==="profile" && user && <ProfilePage   toast={toast}/>}
         {page==="login"   && <LoginPage     setPage={navigate} toast={toast}/>}
         {page==="admin"   && user?.role==="admin" && <AdminDashboard setPage={navigate} toast={toast}/>}
+        {page==="plaza"   && <BVPlazaApp user={user} onBack={()=>navigate("home")} toast={toast}/>}
         {page==="privacy" && <PrivacyPage   setPage={navigate}/>}
         {page==="terms"   && <TermsPage     setPage={navigate}/>}
         {page==="refund"  && <RefundPage    setPage={navigate}/>}
