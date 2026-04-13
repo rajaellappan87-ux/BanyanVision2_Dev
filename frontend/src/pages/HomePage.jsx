@@ -49,7 +49,7 @@ const HomePage = ({ setPage, toast }) => {
           {/* Text */}
           <div>
             <div className="u1">
-              <SecLabel>New Arrivals 2025</SecLabel>
+              <SecLabel>New Arrivals 2026</SecLabel>
             </div>
             <h1 className="u2" style={{fontFamily:"var(--font-d)",fontSize:isMobile?"clamp(40px,11vw,56px)":"clamp(50px,5vw,80px)",fontWeight:700,lineHeight:1.05,color:"var(--dark)",marginTop:14,marginBottom:22,letterSpacing:-.5}}>
               Wear India's<br/>

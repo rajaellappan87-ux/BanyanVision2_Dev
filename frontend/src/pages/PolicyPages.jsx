@@ -17,7 +17,7 @@ const PolicyPage = ({ title, icon, children, setPage }) => {
           <div style={{width:54,height:54,borderRadius:14,background:"linear-gradient(135deg,var(--rose),var(--saffron))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
           <div>
             <h1 style={{fontFamily:"var(--font-d)",fontSize:isMobile?24:32,fontWeight:700,color:"var(--dark)",margin:0}}>{title}</h1>
-            <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>Last updated: January 2025 &nbsp;|&nbsp; BanyanVision</div>
+            <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>Last updated: January 2026 &nbsp;|&nbsp; BanyanVision</div>
           </div>
         </div>
         <div style={{fontSize:14,color:"var(--text2)",lineHeight:1.9}}>{children}</div>

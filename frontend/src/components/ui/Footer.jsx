@@ -146,7 +146,7 @@ const Footer = ({ setPage }) => {
         {/* Bottom bar */}
         <div style={{borderTop:"1px solid rgba(255,255,255,.07)",paddingTop:22,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
           <div style={{fontSize:11,color:"rgba(255,255,255,.3)",fontWeight:400}}>
-            {`© 2025 BanyanVision. Empowering Dreams, Inspiring Innovations.${st.gst?" | GST: "+st.gst:""}`}
+            {`© 2026 BanyanVision. Empowering Dreams, Inspiring Innovations.${st.gst?" | GST: "+st.gst:""}`}
           </div>
           <div style={{display:"flex",gap:16,fontSize:11,color:"rgba(255,255,255,.3)"}}>
             {[["Privacy Policy","privacy"],["Terms","terms"],["Refund Policy","refund"],["Shipping","shipping"]].map(([t,p])=>(

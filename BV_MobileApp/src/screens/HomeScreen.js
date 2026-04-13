@@ -92,7 +92,7 @@ export default function HomeScreen() {
 
       {/* ── Hero ── */}
       <LinearGradient colors={['#FDF8F3', '#F5EFE8', '#FDF8F3']} style={s.hero}>
-        <Text style={s.heroTag}>🌿  New Arrivals 2025</Text>
+        <Text style={s.heroTag}>🌿  New Arrivals 2026</Text>
         <Text style={s.heroTitle}>
           Wear India's{'\n'}<Text style={{ color: Colors.rose, fontStyle: 'italic' }}>Soul</Text> in{'\n'}Every Thread
         </Text>
