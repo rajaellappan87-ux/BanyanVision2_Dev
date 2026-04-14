@@ -30,6 +30,25 @@ const upload = multer({
   },
 });
 
+// ─── Banner image upload (Cloudinary: banyanvision/banners) ──────────────────
+const bannerStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "banyanvision/banners",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    transformation: [{ width: 1200, height: 700, crop: "limit", quality: "auto" }],
+  },
+});
+
+const bannerUpload = multer({
+  storage: bannerStorage,
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Only image files are allowed"), false);
+  },
+});
+
 // ─── JWT auth middleware ───────────────────────────────────────────────────────
 const protect = async (req, res, next) => {
   let token;
@@ -61,4 +80,4 @@ const errorHandler = (err, req, res, next) => {
   res.status(status).json({ success: false, message: err.message || "Server Error" });
 };
 
-module.exports = { protect, adminOnly, upload, cloudinary, errorHandler };
+module.exports = { protect, adminOnly, upload, bannerUpload, cloudinary, errorHandler };

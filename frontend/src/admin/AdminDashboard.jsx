@@ -7,6 +7,7 @@ import {
   apiAdminStats, apiGetAllOrders, apiGetProducts, apiAdminUsers, apiGetCoupons,
   apiCreateProduct, apiUpdateProduct, apiDeleteProduct, apiDeleteProductImage,
   apiUpdateStatus, apiCreateCoupon, apiDeleteCoupon, apiAdminStockUpdate,
+  apiSendProductPromo,
 } from "../api";
 import { Spinner } from "../components/ui/Common";
 import { ImageUploader } from "../components/ui/ImageCropModal";
@@ -19,7 +20,7 @@ import PromoBannerEditor from "./PromoBannerEditor";
 import MarqueeBannerEditor from "./MarqueeBannerEditor";
 import LogViewer from "./LogViewer";
 import AboutPageEditor  from "./AboutPageEditor";
-import { BarChart2, Edit, FileText, Gift, Layers, LayoutDashboard, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, Tag, TrendingUp, Users, Warehouse, Zap } from "lucide-react";
+import { BarChart2, Edit, FileText, Gift, Layers, LayoutDashboard, Mail, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, Tag, TrendingUp, Users, Warehouse, Zap } from "lucide-react";
 
 const AdminDashboard = ({ setPage, toast }) => {
   const {isMobile}=useBreakpoint();
@@ -42,6 +43,13 @@ const AdminDashboard = ({ setPage, toast }) => {
   const [saving,setSaving]=useState(false);
   const setFilesSync = (files) => { pFilesRef.current = files; setPFiles(files); };
   const [cf,setCf]=useState({code:"",type:"percent",discount:"",desc:"",minOrder:0});
+  const [promoMail,setPromoMail]=useState(null);       // product object | null
+  const [promoUsers,setPromoUsers]=useState([]);        // all eligible users
+  const [promoChecked,setPromoChecked]=useState({});    // { userId: true/false }
+  const [promoSearch,setPromoSearch]=useState("");      // filter by name/email
+  const [promoLoading,setPromoLoading]=useState(false); // fetching users
+  const [promoSending,setPromoSending]=useState(false);
+  const [promoResult,setPromoResult]=useState(null);    // { sent, failed, message }
 
   const reload=useCallback(()=>{
     setLoading(true);
@@ -89,13 +97,50 @@ const AdminDashboard = ({ setPage, toast }) => {
   const createCoupon=async()=>{try{const r=await apiCreateCoupon({...cf,discount:Number(cf.discount),minOrder:Number(cf.minOrder)});setCoupons(c=>[r.data.coupon,...c]);setCf({code:"",type:"percent",discount:"",desc:"",minOrder:0});toast("Coupon created!");}catch(err){toast(err.response?.data?.message||"Error","error");}};
   const delCoupon=async id=>{await apiDeleteCoupon(id);setCoupons(cs=>cs.filter(c=>c._id!==id));toast("Deleted");};
 
+  const openPromoModal=async(p)=>{
+    setPromoMail(p);
+    setPromoResult(null);
+    setPromoSearch("");
+    setPromoLoading(true);
+    try{
+      const r=await apiAdminUsers();
+      const all=(r?.data?.users||[]).filter(u=>u.role!=="admin"&&u.email);
+      setPromoUsers(all);
+      // default: all checked
+      const checked={};
+      all.forEach(u=>{checked[u._id]=true;});
+      setPromoChecked(checked);
+    }catch{
+      toast("Could not load users","error");
+    }
+    setPromoLoading(false);
+  };
+
+  const sendPromoMail=async()=>{
+    if(!promoMail)return;
+    const userIds=Object.entries(promoChecked).filter(([,v])=>v).map(([id])=>id);
+    if(!userIds.length){toast("Select at least one user","error");return;}
+    setPromoSending(true);
+    setPromoResult(null);
+    try{
+      const r=await apiSendProductPromo(promoMail._id,userIds);
+      setPromoResult(r.data);
+      toast(`✉ ${r.data.message}`);
+    }catch(err){
+      toast(err.response?.data?.message||"Failed to send","error");
+    }
+    setPromoSending(false);
+  };
+
+  const closePromoModal=()=>{setPromoMail(null);setPromoUsers([]);setPromoChecked({});setPromoResult(null);setPromoSearch("");};
+
   const goTab=k=>{setTab(k);if(isMobile)setDrawer(false);};
   const SIDE=[["overview",LayoutDashboard,"Overview"],["orders",ShoppingBag,"Orders"],["products",Package,"Products"],["add-product",PlusCircle,"Add Product"],["inventory",Warehouse,"Inventory"],["customers",Users,"Customers"],["analytics",BarChart2,"Analytics"],["coupons",Tag,"Coupons"],["categories",Layers,"Categories"],["promo",Gift,"Offer Banner"],["marquee",Zap,"Marquee Banner"],["about-editor",FileText,"About Page"],["settings",Settings,"Site Settings"],["logs",BarChart2,"Log Audit"]];
   const iStyle={background:"var(--ivory2)",border:"1.5px solid var(--border2)",color:"var(--text)",padding:"10px 12px",fontSize:13,borderRadius:12,outline:"none",width:"100%",boxSizing:"border-box",fontWeight:500};
   const lStyle={display:"block",fontSize:10,fontWeight:700,color:"var(--muted)",letterSpacing:.5,textTransform:"uppercase",marginBottom:6};
 
   return(
-    <div style={{display:"flex",minHeight:"calc(100vh - 80px)",background:"var(--ivory)"}}>
+    <><div style={{display:"flex",minHeight:"calc(100vh - 80px)",background:"var(--ivory)"}}>
       {isMobile&&<button onClick={()=>setDrawer(!drawer)} style={{position:"fixed",bottom:20,right:20,zIndex:600,background:"linear-gradient(135deg,var(--rose),var(--saffron))",border:"none",width:50,height:50,borderRadius:"50%",fontSize:20,color:"#fff",boxShadow:"0 6px 24px rgba(194,24,91,.4)"}}><Ic icon={Settings} size={20}/></button>}
 
       {(!isMobile||drawer)&&(
@@ -181,9 +226,15 @@ const AdminDashboard = ({ setPage, toast }) => {
                       <span style={{fontFamily:"var(--font-d)",fontWeight:700,fontSize:15,background:"linear-gradient(135deg,var(--rose),var(--saffron))",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{fmt(p.price)}</span>
                       <span style={{fontSize:11,color:p.stock<=5?"#DC2626":"#16A34A",fontWeight:700}}>Stock: {p.stock}</span>
                     </div>
-                    <div style={{display:"flex",gap:8,marginTop:10}}>
+                    <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
                       <button onClick={()=>editProd(p)} style={{background:"var(--ivory2)",border:"1.5px solid var(--border2)",padding:"5px 14px",borderRadius:8,fontSize:11,cursor:"pointer",color:"var(--text)",fontWeight:600}}>✏ Edit</button>
                       <button onClick={()=>delProd(p._id)} style={{background:"#FEF2F2",border:"1.5px solid #FECACA",padding:"5px 14px",borderRadius:8,fontSize:11,cursor:"pointer",color:"#DC2626",fontWeight:600}}>Delete</button>
+                      <button onClick={()=>openPromoModal(p)}
+                        style={{display:"flex",alignItems:"center",gap:5,background:"linear-gradient(135deg,#EFF6FF,#DBEAFE)",border:"1.5px solid #93C5FD",padding:"5px 14px",borderRadius:8,fontSize:11,cursor:"pointer",color:"#1D4ED8",fontWeight:700,transition:"all .2s"}}
+                        onMouseEnter={e=>e.currentTarget.style.background="linear-gradient(135deg,#2563EB,#1D4ED8)"}
+                        onMouseLeave={e=>e.currentTarget.style.background="linear-gradient(135deg,#EFF6FF,#DBEAFE)"}>
+                        <Ic icon={Mail} size={12}/>Send Mail
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -393,6 +444,169 @@ const AdminDashboard = ({ setPage, toast }) => {
 
       </div>
     </div>
+
+    {/* ── Promo Mail Modal ── */}
+    {promoMail&&(()=>{
+      const checkedIds=Object.entries(promoChecked).filter(([,v])=>v).map(([id])=>id);
+      const filteredUsers=promoUsers.filter(u=>{
+        const q=promoSearch.toLowerCase();
+        return !q||u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q);
+      });
+      const allFilteredChecked=filteredUsers.length>0&&filteredUsers.every(u=>promoChecked[u._id]);
+      const toggleAll=()=>{
+        const next={...promoChecked};
+        filteredUsers.forEach(u=>{next[u._id]=!allFilteredChecked;});
+        setPromoChecked(next);
+      };
+      return(
+        <div style={{position:"fixed",inset:0,background:"rgba(26,10,0,.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,backdropFilter:"blur(6px)",padding:16}}>
+          <div style={{background:"#fff",borderRadius:24,width:"100%",maxWidth:520,boxShadow:"0 32px 80px rgba(0,0,0,.25)",display:"flex",flexDirection:"column",maxHeight:"90vh"}}>
+
+            {/* ── Header ── */}
+            <div style={{padding:"22px 24px 16px",borderBottom:"1.5px solid var(--border)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                <div>
+                  <div style={{fontSize:10,fontWeight:800,letterSpacing:1.2,textTransform:"uppercase",color:"#2563EB",marginBottom:5,display:"flex",alignItems:"center",gap:6}}>
+                    <Ic icon={Mail} size={12}/>Promotional Email Blast
+                  </div>
+                  <h3 style={{fontFamily:"var(--font-d)",fontSize:19,color:"var(--dark)",fontWeight:700,margin:0,lineHeight:1.3}}>{promoMail.name}</h3>
+                </div>
+                <button onClick={closePromoModal} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"var(--muted)",lineHeight:1,flexShrink:0}}>×</button>
+              </div>
+
+              {/* Product strip */}
+              <div style={{display:"flex",gap:12,padding:"10px 12px",background:"var(--ivory2)",borderRadius:12,border:"1.5px solid var(--border)"}}>
+                <img src={promoMail.images?.[0]?.url||"https://placehold.co/48x58/FDF8F3/C2185B?text=P"} alt=""
+                  style={{width:48,height:58,objectFit:"contain",borderRadius:8,border:"1px solid var(--border)",flexShrink:0}}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:9,color:"var(--rose)",fontWeight:700,letterSpacing:.5,textTransform:"uppercase",marginBottom:2}}>{promoMail.category}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:"var(--dark)",marginBottom:4,lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{promoMail.name}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontFamily:"var(--font-d)",fontSize:15,fontWeight:800,color:"var(--rose)"}}>₹{promoMail.price?.toLocaleString("en-IN")}</span>
+                    {promoMail.originalPrice&&<span style={{fontSize:11,color:"var(--muted)",textDecoration:"line-through"}}>₹{promoMail.originalPrice?.toLocaleString("en-IN")}</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── User list section ── */}
+            {!promoResult&&!promoSending&&(
+              <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"16px 24px 0"}}>
+
+                {/* Search + Select All row */}
+                <div style={{display:"flex",gap:8,marginBottom:10,alignItems:"center"}}>
+                  <input
+                    value={promoSearch}
+                    onChange={e=>setPromoSearch(e.target.value)}
+                    placeholder="Search by name or email…"
+                    style={{flex:1,padding:"8px 12px",border:"1.5px solid var(--border2)",borderRadius:9,fontSize:12,outline:"none",color:"var(--text)",background:"var(--ivory2)"}}/>
+                  {!promoLoading&&filteredUsers.length>0&&(
+                    <button onClick={toggleAll}
+                      style={{padding:"8px 14px",borderRadius:9,border:"1.5px solid var(--border2)",background:allFilteredChecked?"var(--roseL)":"var(--ivory2)",color:allFilteredChecked?"var(--rose)":"var(--text2)",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",transition:"all .2s"}}>
+                      {allFilteredChecked?"Deselect All":"Select All"}
+                    </button>
+                  )}
+                </div>
+
+                {/* Stats bar */}
+                {!promoLoading&&(
+                  <div style={{display:"flex",gap:12,marginBottom:10,fontSize:11,fontWeight:600}}>
+                    <span style={{color:"var(--muted)"}}>{promoUsers.length} total users</span>
+                    <span style={{color:"#2563EB"}}>{checkedIds.length} selected</span>
+                    {filteredUsers.length!==promoUsers.length&&<span style={{color:"var(--rose)"}}>{filteredUsers.length} shown</span>}
+                  </div>
+                )}
+
+                {/* Scrollable user checklist */}
+                <div style={{flex:1,overflowY:"auto",border:"1.5px solid var(--border)",borderRadius:12,marginBottom:14}}>
+                  {promoLoading?(
+                    <div style={{textAlign:"center",padding:"28px 0",color:"var(--muted)",fontSize:13}}>
+                      <div style={{width:28,height:28,border:"3px solid var(--border2)",borderTop:"3px solid #2563EB",borderRadius:"50%",animation:"spin .7s linear infinite",margin:"0 auto 10px"}}/>
+                      Loading users…
+                    </div>
+                  ):filteredUsers.length===0?(
+                    <div style={{textAlign:"center",padding:"28px 0",color:"var(--muted)",fontSize:13}}>No users found</div>
+                  ):filteredUsers.map((u,idx)=>(
+                    <label key={u._id}
+                      style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",cursor:"pointer",borderBottom:idx<filteredUsers.length-1?"1px solid var(--border)":"none",
+                        background:promoChecked[u._id]?"#EFF6FF":"#fff",transition:"background .15s"}}
+                      onMouseEnter={e=>{if(!promoChecked[u._id])e.currentTarget.style.background="var(--ivory2)";}}
+                      onMouseLeave={e=>{e.currentTarget.style.background=promoChecked[u._id]?"#EFF6FF":"#fff";}}>
+                      <input type="checkbox" checked={!!promoChecked[u._id]}
+                        onChange={e=>setPromoChecked(c=>({...c,[u._id]:e.target.checked}))}
+                        style={{width:16,height:16,accentColor:"#2563EB",flexShrink:0,cursor:"pointer"}}/>
+                      <div style={{width:30,height:30,background:"linear-gradient(135deg,var(--rose),var(--saffron))",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff",flexShrink:0}}>
+                        {u.name?.[0]?.toUpperCase()||"?"}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:600,color:"var(--dark)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.name}</div>
+                        <div style={{fontSize:11,color:"var(--muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
+                      </div>
+                      {promoChecked[u._id]&&<span style={{fontSize:10,fontWeight:700,color:"#2563EB",background:"#DBEAFE",padding:"2px 8px",borderRadius:99,flexShrink:0}}>✓</span>}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Sending state ── */}
+            {promoSending&&(
+              <div style={{textAlign:"center",padding:"32px 24px"}}>
+                <div style={{width:40,height:40,border:"3px solid var(--border2)",borderTop:"3px solid #2563EB",borderRadius:"50%",animation:"spin .7s linear infinite",margin:"0 auto 14px"}}/>
+                <div style={{fontSize:14,fontWeight:600,color:"#2563EB"}}>Sending to {checkedIds?.length||0} users…</div>
+                <div style={{fontSize:12,color:"var(--muted)",marginTop:4}}>This may take a moment</div>
+              </div>
+            )}
+
+            {/* ── Result ── */}
+            {promoResult&&(
+              <div style={{padding:"24px"}}>
+                <div style={{padding:"20px",borderRadius:14,background:promoResult.failed?"#FFFBF0":"#F0FDF4",border:`1.5px solid ${promoResult.failed?"#FED7AA":"#BBF7D0"}`,marginBottom:16,textAlign:"center"}}>
+                  <div style={{fontSize:28,marginBottom:8}}>{promoResult.failed?"⚠️":"✅"}</div>
+                  <div style={{fontWeight:700,fontSize:15,color:promoResult.failed?"#D97706":"#16A34A",marginBottom:12}}>
+                    {promoResult.failed?"Sent with some failures":"All emails sent successfully!"}
+                  </div>
+                  <div style={{display:"flex",justifyContent:"center",gap:32}}>
+                    <div>
+                      <div style={{fontFamily:"var(--font-d)",fontSize:32,fontWeight:800,color:"#16A34A"}}>{promoResult.sent}</div>
+                      <div style={{fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.5}}>Delivered</div>
+                    </div>
+                    {promoResult.failed>0&&(
+                      <div>
+                        <div style={{fontFamily:"var(--font-d)",fontSize:32,fontWeight:800,color:"#DC2626"}}>{promoResult.failed}</div>
+                        <div style={{fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:.5}}>Failed</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Footer buttons ── */}
+            <div style={{padding:"0 24px 22px",display:"flex",gap:10}}>
+              <button onClick={closePromoModal}
+                style={{flex:1,padding:"12px 0",borderRadius:11,background:"var(--ivory2)",border:"1.5px solid var(--border2)",fontWeight:600,fontSize:13,cursor:"pointer",color:"var(--muted)"}}>
+                {promoResult?"Close":"Cancel"}
+              </button>
+              {!promoResult&&(
+                <button onClick={sendPromoMail} disabled={promoSending||promoLoading||checkedIds.length===0}
+                  style={{flex:2,padding:"12px 0",borderRadius:11,fontWeight:700,fontSize:13,border:"none",color:"#fff",
+                    background:"linear-gradient(135deg,#2563EB,#1D4ED8)",
+                    opacity:(promoSending||promoLoading||checkedIds.length===0)?.55:1,
+                    cursor:(promoSending||promoLoading||checkedIds.length===0)?"not-allowed":"pointer",
+                    display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+                    boxShadow:"0 4px 16px rgba(37,99,235,.35)"}}>
+                  <Ic icon={Mail} size={14}/>
+                  {promoSending?"Sending…":`Send to ${checkedIds.length} User${checkedIds.length!==1?"s":""}`}
+                </button>
+              )}
+            </div>
+
+          </div>
+        </div>
+      );
+    })()}
+    </>
   );
 };
 

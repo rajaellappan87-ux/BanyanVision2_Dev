@@ -122,8 +122,11 @@ export const apiGetLogStats  = ()       => API.get("/logs/stats");
 export const apiClearLogs    = ()       => API.delete("/logs");
 
 // ── Email Diagnostics ─────────────────────────────────────────────────────────
-export const apiEmailCheck = ()     => API.get("/admin/email/check");
-export const apiEmailTest  = (to)   => API.post("/admin/email/test", { to });
+export const apiEmailCheck         = ()     => API.get("/admin/email/check");
+export const apiEmailTest          = (to)   => API.post("/admin/email/test", { to });
+export const apiSendProductPromo   = (id, userIds) => API.post(`/admin/products/${id}/promo-mail`, { userIds });
+export const apiUploadBannerImages = (fd)          => API.post("/admin/offer/upload-images", fd, { headers: { "Content-Type": "multipart/form-data" } });
+export const apiSendOfferPromo     = (userIds, offer) => API.post("/admin/offer/promo-mail", { userIds, offer });
 
 // ── DB Info ──────────────────────────────────────────────────────────────────
 export const apiGetDbInfo = () => API.get("/db-info");

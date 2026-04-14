@@ -42,6 +42,23 @@ function AppShell() {
   const navigate = useCallback(p => {
     setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    // Keep URL in sync for shareable product links
+    if (p.startsWith("product-")) {
+      const id = p.replace("product-", "");
+      window.history.replaceState({}, "", `?product=${id}`);
+    } else {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  // Read ?product=<id> from URL on first load for shareable links
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get("product");
+    if (pid) {
+      setPage(`product-${pid}`);
+      window.history.replaceState({}, "", `?product=${pid}`);
+    }
   }, []);
 
   useEffect(() => {
