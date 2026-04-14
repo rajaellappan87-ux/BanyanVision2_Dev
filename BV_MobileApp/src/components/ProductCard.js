@@ -1,12 +1,23 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions,
+  View, Text, TouchableOpacity, StyleSheet, Dimensions, Share,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Colors, Radius, Shadow, Spacing } from '../constants/theme';
 import { fmt, discPct, getImageUrl } from '../utils/helpers';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
+
+const shareProduct = async (p) => {
+  const url = `https://www.banyanvision.com/?product=${p._id}`;
+  try {
+    await Share.share({
+      title: p.name,
+      message: `Check out "${p.name}" on BanyanVision!\n${url}`,
+      url,
+    });
+  } catch {}
+};
 
 const { width: W } = Dimensions.get('window');
 const CARD_W = (W - Spacing.md * 2 - 10) / 2; // 2 columns with gap
@@ -95,9 +106,14 @@ export default function ProductCard({ product: p, onPress, compact = false, styl
             <Text style={gs.origPrice}>{fmt(p.originalPrice)}</Text>
           )}
         </View>
-        {p.rating > 0 && (
-          <Text style={gs.rating}>⭐ {p.rating?.toFixed(1)} ({p.numReviews})</Text>
-        )}
+        <View style={gs.infoFooter}>
+          {p.rating > 0 && (
+            <Text style={gs.rating}>⭐ {p.rating?.toFixed(1)} ({p.numReviews})</Text>
+          )}
+          <TouchableOpacity onPress={e => { e?.stopPropagation?.(); shareProduct(p); }} style={gs.shareBtn} hitSlop={8}>
+            <Text style={gs.shareBtnTxt}>⬆ Share</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -140,5 +156,8 @@ const gs = StyleSheet.create({
   priceRow:    { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
   price:       { fontSize: 15, fontWeight: '800', color: Colors.rose },
   origPrice:   { fontSize: 10, color: Colors.muted, textDecorationLine: 'line-through' },
+  infoFooter:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
   rating:      { fontSize: 10, color: Colors.muted },
+  shareBtn:    { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  shareBtnTxt: { fontSize: 10, color: Colors.rose, fontWeight: '700' },
 });

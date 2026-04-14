@@ -9,6 +9,8 @@ export const DEFAULT_PROMO = {
   codeDesc:   "on all lehengas, sarees & jewellery sets.",
   btnLabel:   "Shop Now",
   active:     true,
+  image1:     "",
+  image2:     "",
 };
 
 // ─── Default About Page ───────────────────────────────────────────────────────

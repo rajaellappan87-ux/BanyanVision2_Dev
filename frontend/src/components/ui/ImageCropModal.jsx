@@ -8,41 +8,39 @@ const CROP_H = 1100;
 const CROP_RATIO = CROP_W / CROP_H; // 0.818...
 
 const ImageCropModal = ({ src, onDone, onCancel }) => {
-  const canvasRef  = useRef();
-  const imgRef     = useRef();
+  const imgRef       = useRef();
   const containerRef = useRef();
-  const [drag,  setDrag]  = useState(false);
-  const [scale, setScale] = useState(1);
-  const [pos,   setPos]   = useState({ x:0, y:0 });
+  const [drag,    setDrag]    = useState(false);
+  const [scale,   setScale]   = useState(1);
+  const [pos,     setPos]     = useState({ x:0, y:0 });
   const [imgSize, setImgSize] = useState({ w:0, h:0 });
   const dragStart = useRef(null);
 
-  // Container display size
-  const DISP_W = 320;
-  const DISP_H = Math.round(DISP_W / CROP_RATIO); // ~391
+  // Responsive display size — recomputed once on mount, stable for crop math
+  const dispW = Math.min(320, Math.max(220, window.innerWidth - 96));
+  const dispH = Math.round(dispW / CROP_RATIO);
 
-  // Load image and auto-fit
+  // Load image and auto-fit to display size
   useEffect(() => {
     const img = new Image();
     img.onload = () => {
-      // Scale so image covers the crop area at minimum
-      const scaleToFit = Math.max(DISP_W / img.naturalWidth, DISP_H / img.naturalHeight);
+      const scaleToFit = Math.max(dispW / img.naturalWidth, dispH / img.naturalHeight);
       const w = img.naturalWidth  * scaleToFit;
       const h = img.naturalHeight * scaleToFit;
       setImgSize({ w, h });
       setScale(1);
-      setPos({ x: (DISP_W - w) / 2, y: (DISP_H - h) / 2 });
+      setPos({ x: (dispW - w) / 2, y: (dispH - h) / 2 });
       imgRef.current = img;
     };
     img.src = src;
-  }, [src]);
+  }, [src]); // eslint-disable-line
 
   const clampPos = (p, s) => {
     const w = imgSize.w * s;
     const h = imgSize.h * s;
     return {
-      x: Math.min(0, Math.max(DISP_W - w, p.x)),
-      y: Math.min(0, Math.max(DISP_H - h, p.y)),
+      x: Math.min(0, Math.max(dispW - w, p.x)),
+      y: Math.min(0, Math.max(dispH - h, p.y)),
     };
   };
 
@@ -89,8 +87,8 @@ const ImageCropModal = ({ src, onDone, onCancel }) => {
     const displayToNatural = imgRef.current.naturalWidth / (imgSize.w * scale);
     const srcX = (-pos.x / scale) * displayToNatural;
     const srcY = (-pos.y / scale) * displayToNatural;
-    const srcW = (DISP_W / scale) * displayToNatural;
-    const srcH = (DISP_H / scale) * displayToNatural;
+    const srcW = (dispW / scale) * displayToNatural;
+    const srcH = (dispH / scale) * displayToNatural;
     ctx.drawImage(imgRef.current, srcX, srcY, srcW, srcH, 0, 0, CROP_W, CROP_H);
     canvas.toBlob(blob => {
       const file = new File([blob], "cropped.jpg", { type: "image/jpeg" });
@@ -99,79 +97,140 @@ const ImageCropModal = ({ src, onDone, onCancel }) => {
   };
 
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(26,10,0,.75)",zIndex:99999,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(6px)",padding:16}}>
-      <div style={{background:"#fff",borderRadius:20,padding:24,width:"100%",maxWidth:400,boxShadow:"0 24px 64px rgba(0,0,0,.3)"}}>
-        {/* Header */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+    <div style={{
+      position:"fixed", inset:0, background:"rgba(26,10,0,.8)", zIndex:99999,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      backdropFilter:"blur(6px)", padding:12, boxSizing:"border-box",
+    }}>
+      <div style={{
+        background:"#fff", borderRadius:20, width:"100%", maxWidth:420,
+        maxHeight:"calc(100vh - 24px)", display:"flex", flexDirection:"column",
+        boxShadow:"0 24px 64px rgba(0,0,0,.4)", overflow:"hidden",
+      }}>
+
+        {/* ── Header (always visible) ── */}
+        <div style={{
+          display:"flex", justifyContent:"space-between", alignItems:"center",
+          padding:"14px 20px 12px", flexShrink:0,
+          borderBottom:"1.5px solid var(--border)",
+        }}>
           <div>
             <div style={{fontFamily:"var(--font-d)",fontSize:18,fontWeight:700,color:"var(--dark)"}}>Crop Image</div>
             <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>Drag to reposition · Zoom to fit · 9:11 ratio</div>
           </div>
-          <button onClick={onCancel} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"var(--muted)"}}>×</button>
+          <button onClick={onCancel} style={{
+            background:"var(--ivory2)", border:"1.5px solid var(--border2)",
+            borderRadius:8, width:32, height:32, cursor:"pointer",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:18, color:"var(--muted)", lineHeight:1, flexShrink:0,
+          }}>×</button>
         </div>
 
-        {/* Crop viewport */}
-        <div ref={containerRef}
-          style={{width:DISP_W,height:DISP_H,margin:"0 auto 16px",position:"relative",overflow:"hidden",
-            borderRadius:10,background:"#111",cursor:drag?"grabbing":"grab",
-            border:"2px solid var(--rose)",boxShadow:"0 4px 20px rgba(194,24,91,.2)",userSelect:"none"}}
-          onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-          onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={()=>setDrag(false)}>
-          {imgRef.current && (
-            <img src={src} alt="crop" draggable={false}
-              style={{position:"absolute",
-                width:imgSize.w * scale, height:imgSize.h * scale,
-                left:pos.x, top:pos.y,
-                pointerEvents:"none",userSelect:"none"}}/>
-          )}
-          {/* Grid overlay */}
-          <div style={{position:"absolute",inset:0,pointerEvents:"none",
-            backgroundImage:"linear-gradient(rgba(255,255,255,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.15) 1px,transparent 1px)",
-            backgroundSize:`${DISP_W/3}px ${DISP_H/3}px`}}/>
-          {/* Corner markers */}
-          {[["0 0","0 0"],["0 auto","0 0"],["auto 0","0 0"],["auto auto","0 0"]].map((_,i)=>(
-            <div key={i} style={{position:"absolute",
-              top:   i<2?0:"auto", bottom: i>=2?0:"auto",
-              left:  i%2===0?0:"auto", right: i%2===1?0:"auto",
-              width:18,height:18,
-              borderTop:   i<2?"2.5px solid var(--rose)":"none",
-              borderBottom:i>=2?"2.5px solid var(--rose)":"none",
-              borderLeft:  i%2===0?"2.5px solid var(--rose)":"none",
-              borderRight: i%2===1?"2.5px solid var(--rose)":"none",
-              borderRadius: i===0?"4px 0 0 0":i===1?"0 4px 0 0":i===2?"0 0 0 4px":"0 0 4px 0",
+        {/* ── Scrollable crop area ── */}
+        <div style={{flex:1, overflowY:"auto", padding:"16px 20px 8px"}}>
+
+          {/* Crop viewport */}
+          <div ref={containerRef}
+            style={{
+              width:dispW, height:dispH, margin:"0 auto 16px",
+              position:"relative", overflow:"hidden", borderRadius:10,
+              background:"#111", cursor:drag?"grabbing":"grab",
+              border:"2px solid var(--rose)",
+              boxShadow:"0 4px 20px rgba(194,24,91,.25)", userSelect:"none",
+              touchAction:"none",
+            }}
+            onMouseDown={onMouseDown} onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+            onTouchStart={onTouchStart} onTouchMove={onTouchMove}
+            onTouchEnd={()=>setDrag(false)}>
+
+            {imgRef.current && (
+              <img src={src} alt="crop" draggable={false}
+                style={{
+                  position:"absolute",
+                  width:imgSize.w * scale, height:imgSize.h * scale,
+                  left:pos.x, top:pos.y,
+                  pointerEvents:"none", userSelect:"none",
+                }}/>
+            )}
+
+            {/* Rule-of-thirds grid */}
+            <div style={{
+              position:"absolute", inset:0, pointerEvents:"none",
+              backgroundImage:"linear-gradient(rgba(255,255,255,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.15) 1px,transparent 1px)",
+              backgroundSize:`${dispW/3}px ${dispH/3}px`,
             }}/>
-          ))}
-          {/* Size label */}
-          <div style={{position:"absolute",bottom:6,right:8,background:"rgba(0,0,0,.55)",color:"#fff",fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:99,letterSpacing:.5}}>
-            900 × 1100
+
+            {/* Corner L-markers */}
+            {[0,1,2,3].map(i=>(
+              <div key={i} style={{
+                position:"absolute",
+                top:    i<2  ? 0      : "auto", bottom: i>=2 ? 0      : "auto",
+                left:   i%2===0 ? 0  : "auto", right:  i%2===1 ? 0   : "auto",
+                width:18, height:18,
+                borderTop:    i<2   ? "2.5px solid var(--rose)" : "none",
+                borderBottom: i>=2  ? "2.5px solid var(--rose)" : "none",
+                borderLeft:   i%2===0 ? "2.5px solid var(--rose)" : "none",
+                borderRight:  i%2===1 ? "2.5px solid var(--rose)" : "none",
+                borderRadius: i===0?"4px 0 0 0":i===1?"0 4px 0 0":i===2?"0 0 0 4px":"0 0 4px 0",
+              }}/>
+            ))}
+
+            {/* Output size badge */}
+            <div style={{
+              position:"absolute", bottom:6, right:8,
+              background:"rgba(0,0,0,.55)", color:"#fff",
+              fontSize:9, fontWeight:700, padding:"2px 7px",
+              borderRadius:99, letterSpacing:.5,
+            }}>
+              900 × 1100
+            </div>
           </div>
+
+          {/* Zoom slider */}
+          <div style={{marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,fontWeight:600,color:"var(--muted)",marginBottom:6}}>
+              <span style={{display:"flex",alignItems:"center",gap:4}}><Ic icon={ZoomIn} size={13}/> Zoom</span>
+              <span>{Math.round(scale*100)}%</span>
+            </div>
+            <input type="range" min="1" max="3" step="0.01" value={scale}
+              onChange={e=>handleScale(e.target.value)}
+              style={{width:"100%",accentColor:"var(--rose)",cursor:"pointer"}}/>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"var(--muted)",marginTop:3}}>
+              <span>Fit</span><span>Max zoom</span>
+            </div>
+          </div>
+
         </div>
 
-        {/* Zoom slider */}
-        <div style={{marginBottom:18}}>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:11,fontWeight:600,color:"var(--muted)",marginBottom:6}}>
-            <span><Ic icon={ZoomIn} size={13}/>Zoom</span>
-            <span>{Math.round(scale*100)}%</span>
-          </div>
-          <input type="range" min="1" max="3" step="0.01" value={scale}
-            onChange={e=>handleScale(e.target.value)}
-            style={{width:"100%",accentColor:"var(--rose)",cursor:"pointer"}}/>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"var(--muted)",marginTop:3}}>
-            <span>Fit</span><span>Max</span>
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div style={{display:"flex",gap:10}}>
+        {/* ── Buttons (always visible at bottom) ── */}
+        <div style={{
+          display:"flex", gap:10, padding:"12px 20px 16px",
+          flexShrink:0, borderTop:"1.5px solid var(--border)",
+          background:"#fff",
+        }}>
           <button onClick={onCancel}
-            style={{flex:1,padding:"11px 0",borderRadius:10,background:"var(--ivory2)",border:"1.5px solid var(--border2)",fontWeight:600,fontSize:13,cursor:"pointer",color:"var(--muted)"}}>
+            style={{
+              flex:1, padding:"12px 0", borderRadius:10,
+              background:"var(--ivory2)", border:"1.5px solid var(--border2)",
+              fontWeight:600, fontSize:13, cursor:"pointer", color:"var(--muted)",
+            }}>
             Cancel
           </button>
           <button onClick={applyCrop}
-            style={{flex:2,padding:"11px 0",borderRadius:10,background:"linear-gradient(135deg,var(--rose),var(--saffron))",border:"none",fontWeight:700,fontSize:13,cursor:"pointer",color:"#fff",boxShadow:"0 4px 16px rgba(194,24,91,.3)"}}>
-            <span style={{display:"flex",alignItems:"center",gap:6}}><Ic icon={Crop} size={14}/>Apply Crop</span>
+            style={{
+              flex:2, padding:"12px 0", borderRadius:10,
+              background:"linear-gradient(135deg,var(--rose),var(--saffron))",
+              border:"none", fontWeight:700, fontSize:13,
+              cursor:"pointer", color:"#fff",
+              boxShadow:"0 4px 16px rgba(194,24,91,.3)",
+            }}>
+            <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <Ic icon={Crop} size={14}/>Apply Crop
+            </span>
           </button>
         </div>
+
       </div>
     </div>
   );

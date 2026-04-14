@@ -1,5 +1,5 @@
 @echo off
-cd /d D:\Raja\BV\SourceCode\BanyanVision2_Dev
+cd /d D:\Raja\BV\SourceCode\BV_SourceCode\Dev
 
 git config user.name "rajaellappan87-ux"
 git config user.email "rajaellappan87@gmail.com"

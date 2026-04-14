@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert, Share } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
@@ -93,6 +93,17 @@ export default function ProductDetailScreen() {
     setReviewLoading(false);
   };
 
+  const handleShare = async () => {
+    const url = `https://www.banyanvision.com/?product=${product._id}`;
+    try {
+      await Share.share({
+        title: product.name,
+        message: `Check out "${product.name}" on BanyanVision!\n${url}`,
+        url,
+      });
+    } catch {}
+  };
+
   const handleBuyNow = () => {
     if (!requireSize()) return;
     addToCart(product, qty, size, color);
@@ -116,8 +127,16 @@ export default function ProductDetailScreen() {
 
         <View style={s.body}>
           {/* Name & Price */}
-          <Text style={s.category}>{product.category}</Text>
-          <Text style={s.name}>{product.name}</Text>
+          <View style={s.nameRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.category}>{product.category}</Text>
+              <Text style={s.name}>{product.name}</Text>
+            </View>
+            <TouchableOpacity onPress={handleShare} style={s.shareBtn}>
+              <Text style={s.shareBtnIcon}>⬆</Text>
+              <Text style={s.shareBtnText}>Share</Text>
+            </TouchableOpacity>
+          </View>
           <View style={s.priceRow}>
             <Text style={s.price}>{fmt(product.price)}</Text>
             {product.originalPrice && (
@@ -262,8 +281,12 @@ export default function ProductDetailScreen() {
 const s = StyleSheet.create({
   center:      { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.ivory },
   body:        { padding: Spacing.md },
+  nameRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 4 },
   category:    { fontSize: 11, color: Colors.rose, fontWeight: '700', letterSpacing: 1, marginBottom: 4 },
   name:        { fontSize: 22, fontWeight: '700', color: Colors.dark, marginBottom: 10, lineHeight: 28 },
+  shareBtn:    { alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, borderWidth: 1.5, borderColor: Colors.border, paddingHorizontal: 10, paddingVertical: 7, marginTop: 2 },
+  shareBtnIcon:{ fontSize: 14, color: Colors.rose },
+  shareBtnText:{ fontSize: 9, color: Colors.muted, fontWeight: '700', letterSpacing: 0.5, marginTop: 2 },
   priceRow:    { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   price:       { fontSize: 26, fontWeight: '800', color: Colors.rose },
   origPrice:   { fontSize: 16, color: Colors.muted, textDecorationLine: 'line-through' },

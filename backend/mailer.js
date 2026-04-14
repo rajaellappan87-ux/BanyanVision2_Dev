@@ -443,8 +443,197 @@ const diagnoseMail = async (toAddress) => {
   return result;
 };
 
+// ═════════════════════════════════════════════════════════════════════════════
+// 6. PRODUCT PROMO — blast to all active users
+// ═════════════════════════════════════════════════════════════════════════════
+const sendProductPromo = async ({ product, users }) => {
+  const productUrl = `https://www.banyanvision.com/?product=${product._id}`;
+  const waText     = encodeURIComponent(`🌿 Check out "${product.name}" on BanyanVision!\n${productUrl}`);
+  const waUrl      = `https://wa.me/?text=${waText}`;
+
+  const disc = product.originalPrice && product.originalPrice > product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0;
+
+  const imgUrl  = product.images?.[0]?.url || "";
+  const savings = product.originalPrice && product.originalPrice > product.price
+    ? `₹${(product.originalPrice - product.price).toLocaleString("en-IN")}`
+    : null;
+
+  const detailRows = [
+    product.category && ["Category", product.category],
+    product.fabric   && ["Fabric",   product.fabric],
+    product.occasion && ["Occasion", product.occasion],
+    product.sizes?.length && ["Sizes", product.sizes.join(", ")],
+  ].filter(Boolean);
+
+  const sent   = [];
+  const failed = [];
+
+  for (const user of users) {
+    try {
+      await send({
+        to:      user.email,
+        subject: `✨ New Arrival Just For You: ${product.name} | BanyanVision`,
+        html: wrap(`
+          <!-- ── Hero image ── -->
+          ${imgUrl ? `
+          <div style="border-radius:16px;overflow:hidden;margin-bottom:24px;border:1px solid #F0E8DD;background:#FDF8F3;">
+            <img src="${imgUrl}" alt="${product.name}"
+              style="width:100%;max-height:380px;object-fit:cover;display:block;"/>
+          </div>` : ""}
+
+          <!-- ── Badge row ── -->
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            ${product.badge ? `<span style="background:linear-gradient(135deg,${BRAND},${GOLD});color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:99px;letter-spacing:.5px;">${product.badge}</span>` : ""}
+            ${disc > 0 ? `<span style="background:#F0FDF4;color:#16A34A;font-size:10px;font-weight:800;padding:4px 10px;border-radius:99px;border:1px solid #BBF7D0;">${disc}% OFF</span>` : ""}
+            ${product.trending ? `<span style="background:#FFF7ED;color:#D97706;font-size:10px;font-weight:800;padding:4px 10px;border-radius:99px;border:1px solid #FED7AA;">🔥 Trending</span>` : ""}
+            ${product.featured ? `<span style="background:#EFF6FF;color:#2563EB;font-size:10px;font-weight:800;padding:4px 10px;border-radius:99px;border:1px solid #BFDBFE;">⭐ Featured</span>` : ""}
+          </div>
+
+          <!-- ── Product name ── -->
+          <div class="greeting" style="font-size:26px;margin-bottom:4px;">${product.name}</div>
+          <div style="font-size:12px;color:#9E8070;margin-bottom:18px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;">${product.category || ""}</div>
+
+          <!-- ── Price ── -->
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px 20px;background:linear-gradient(135deg,#FEF2F2,#FFF7ED);border-radius:14px;border:1px solid #F0E8DD;">
+            <div style="font-size:32px;font-weight:800;color:${BRAND};">₹${product.price.toLocaleString("en-IN")}</div>
+            ${product.originalPrice ? `<div style="font-size:16px;color:#B0A090;text-decoration:line-through;font-weight:500;">₹${product.originalPrice.toLocaleString("en-IN")}</div>` : ""}
+            ${savings ? `<div style="background:#F0FDF4;color:#16A34A;font-size:11px;font-weight:800;padding:5px 12px;border-radius:99px;border:1px solid #BBF7D0;">You save ${savings}!</div>` : ""}
+          </div>
+
+          <!-- ── Description ── -->
+          ${product.description ? `
+          <div style="font-size:14px;color:#5C4033;line-height:1.85;margin-bottom:20px;padding:16px;background:#FDFAF7;border-radius:12px;border-left:3px solid ${BRAND};">
+            ${product.description}
+          </div>` : ""}
+
+          <!-- ── Product details ── -->
+          ${detailRows.length ? `
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-title">📋 Product Details</div>
+            ${detailRows.map(([k, v]) => `
+              <div class="row">
+                <span class="row-label">${k}</span>
+                <span class="row-value">${v}</span>
+              </div>`).join("")}
+          </div>` : ""}
+
+          <!-- ── CTA Buttons ── -->
+          <div style="text-align:center;margin-bottom:20px;">
+            <a href="${productUrl}"
+              style="display:inline-block;background:linear-gradient(135deg,${BRAND},${GOLD});color:#fff;text-decoration:none;font-size:15px;font-weight:800;padding:16px 40px;border-radius:14px;letter-spacing:.3px;box-shadow:0 6px 24px rgba(194,24,91,.35);margin-bottom:12px;">
+              🛍 Shop Now
+            </a>
+            <br/>
+            <a href="${waUrl}" target="_blank"
+              style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:11px 28px;border-radius:12px;letter-spacing:.2px;margin-top:8px;">
+              💬 Share on WhatsApp
+            </a>
+          </div>
+
+          <!-- ── Trust strip ── -->
+          <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;padding:16px;background:#FDF8F3;border-radius:12px;border:1px solid #F0E8DD;margin-bottom:20px;text-align:center;">
+            ${["🚚 Free Delivery ₹2000+", "🔄 7-Day Returns", "🔒 Secure Payment", "⭐ Verified Artisans"].map(t => `
+              <div style="font-size:11px;color:#7C6050;font-weight:600;">${t}</div>`).join("")}
+          </div>
+
+          <!-- ── Promo hint ── -->
+          <div style="background:linear-gradient(135deg,${DARK},#3D1500);border-radius:14px;padding:18px 20px;text-align:center;margin-bottom:4px;">
+            <div style="color:rgba(255,255,255,.7);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">First Order Offer</div>
+            <div style="color:#F9A825;font-family:monospace;font-size:22px;font-weight:800;letter-spacing:3px;margin-bottom:4px;">WELCOME20</div>
+            <div style="color:rgba(255,255,255,.75);font-size:12px;">Use code for 20% off your first order</div>
+          </div>
+        `),
+      }, `product_promo_${product._id}_${user._id}`);
+      sent.push(user.email);
+    } catch {
+      failed.push(user.email);
+    }
+  }
+
+  return { sent: sent.length, failed: failed.length };
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 7. OFFER PROMO — blast offer banner ad to selected users
+// ═════════════════════════════════════════════════════════════════════════════
+const sendOfferPromo = async ({ offer, users }) => {
+  const shopUrl = "https://www.banyanvision.com/";
+  const waText  = encodeURIComponent(`🎉 ${offer.heading} — ${offer.subheading}\nShop now: ${shopUrl}`);
+  const waUrl   = `https://wa.me/?text=${waText}`;
+
+  const sent   = [];
+  const failed = [];
+
+  for (const user of users) {
+    try {
+      await send({
+        to:      user.email,
+        subject: `🎉 ${offer.heading} — ${offer.subheading} | BanyanVision`,
+        html: wrap(`
+          <!-- ── Banner Images ── -->
+          ${offer.image1 || offer.image2 ? `
+          <div style="display:flex;gap:6px;margin-bottom:24px;border-radius:16px;overflow:hidden;border:1px solid #F0E8DD;">
+            ${offer.image1 ? `<img src="${offer.image1}" alt="Offer Banner" style="width:${offer.image2 ? "50%" : "100%"};object-fit:cover;display:block;max-height:320px;"/>` : ""}
+            ${offer.image2 ? `<img src="${offer.image2}" alt="Offer Banner 2" style="width:50%;object-fit:cover;display:block;max-height:320px;"/>` : ""}
+          </div>` : ""}
+
+          <!-- ── Tag ── -->
+          ${offer.tag ? `<div style="margin-bottom:14px;"><span style="background:linear-gradient(135deg,${BRAND},${GOLD});color:#fff;font-size:10px;font-weight:800;padding:5px 14px;border-radius:99px;letter-spacing:.5px;">${offer.tag}</span></div>` : ""}
+
+          <!-- ── Heading ── -->
+          <div class="greeting" style="font-size:28px;margin-bottom:6px;">${offer.heading || "Special Offer"}</div>
+
+          <!-- ── Sub-heading ── -->
+          ${offer.subheading ? `<div style="font-size:22px;font-weight:800;color:${GOLD};margin-bottom:16px;">${offer.subheading}</div>` : ""}
+
+          <!-- ── Body text ── -->
+          ${offer.body || offer.codeDesc ? `
+          <div style="font-size:14px;color:#5C4033;line-height:1.85;margin-bottom:20px;padding:16px;background:#FDFAF7;border-radius:12px;border-left:3px solid ${BRAND};">
+            ${offer.body || ""} ${offer.codeDesc ? `<span style="color:#7C6050;">${offer.codeDesc}</span>` : ""}
+          </div>` : ""}
+
+          <!-- ── Coupon code box ── -->
+          ${offer.code ? `
+          <div style="background:linear-gradient(135deg,${DARK},#3D1500);border-radius:14px;padding:18px 20px;text-align:center;margin-bottom:24px;">
+            <div style="color:rgba(255,255,255,.7);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">Your Exclusive Code</div>
+            <div style="color:#F9A825;font-family:monospace;font-size:28px;font-weight:800;letter-spacing:4px;margin-bottom:4px;">${offer.code}</div>
+            ${offer.codeDesc ? `<div style="color:rgba(255,255,255,.75);font-size:12px;">${offer.codeDesc}</div>` : ""}
+          </div>` : ""}
+
+          <!-- ── CTA ── -->
+          <div style="text-align:center;margin-bottom:20px;">
+            <a href="${shopUrl}"
+              style="display:inline-block;background:linear-gradient(135deg,${BRAND},${GOLD});color:#fff;text-decoration:none;font-size:15px;font-weight:800;padding:16px 40px;border-radius:14px;letter-spacing:.3px;box-shadow:0 6px 24px rgba(194,24,91,.35);margin-bottom:12px;">
+              ${offer.btnLabel || "🛍 Shop Now"}
+            </a>
+            <br/>
+            <a href="${waUrl}" target="_blank"
+              style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:11px 28px;border-radius:12px;margin-top:8px;">
+              💬 Share on WhatsApp
+            </a>
+          </div>
+
+          <!-- ── Trust strip ── -->
+          <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;padding:16px;background:#FDF8F3;border-radius:12px;border:1px solid #F0E8DD;text-align:center;">
+            ${["🚚 Free Delivery ₹2000+", "🔄 7-Day Returns", "🔒 Secure Payment", "⭐ Verified Artisans"].map(t => `
+              <div style="font-size:11px;color:#7C6050;font-weight:600;">${t}</div>`).join("")}
+          </div>
+        `),
+      }, `offer_promo_${user._id}`);
+      sent.push(user.email);
+    } catch {
+      failed.push(user.email);
+    }
+  }
+
+  return { sent: sent.length, failed: failed.length };
+};
+
 module.exports = {
   sendOrderConfirmation, sendStatusUpdate, sendThankYou,
   sendReviewAck, sendSafe, sendOrdersExportEmail,
+  sendProductPromo, sendOfferPromo,
   verifySmtp, diagnoseMail,
 };

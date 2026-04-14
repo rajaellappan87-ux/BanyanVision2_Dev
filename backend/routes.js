@@ -6,8 +6,8 @@ const Razorpay = require("razorpay");
 const { body, validationResult } = require("express-validator");
 const path = require("path");
 const { User, Product, Review, Order, Coupon } = require(path.join(__dirname, "models"));
-const { protect, adminOnly, upload, cloudinary } = require(path.join(__dirname, "middleware"));
-const { sendOrderConfirmation, sendStatusUpdate, sendThankYou, sendReviewAck, sendSafe, sendOrdersExportEmail, verifySmtp, diagnoseMail } = require(path.join(__dirname, "mailer"));
+const { protect, adminOnly, upload, bannerUpload, cloudinary } = require(path.join(__dirname, "middleware"));
+const { sendOrderConfirmation, sendStatusUpdate, sendThankYou, sendReviewAck, sendSafe, sendOrdersExportEmail, sendProductPromo, sendOfferPromo, verifySmtp, diagnoseMail } = require(path.join(__dirname, "mailer"));
 
 const router = express.Router();
 
@@ -586,6 +586,96 @@ adminRouter.delete("/users/:id", async (req, res) => {
 });
 
 
+
+// ─── Product Promo Mail ───────────────────────────────────────────────────────
+// POST /api/admin/products/:id/promo-mail — blast product ad to selected (or all) users
+adminRouter.post("/products/:id/promo-mail", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    const { userIds } = req.body; // optional array of user IDs; if omitted → send to all
+
+    let query = { role: "user", email: { $exists: true, $ne: "" } };
+    if (Array.isArray(userIds) && userIds.length > 0) {
+      query._id = { $in: userIds };
+    }
+
+    const users = await User.find(query).select("name email").lean();
+
+    if (!users.length) {
+      return res.json({ success: true, sent: 0, failed: 0, message: "No users selected." });
+    }
+
+    const { sent, failed } = await sendProductPromo({ product, users });
+
+    log.info("email", "Product promo mail sent", {
+      productId: product._id, productName: product.name,
+      sentBy: req.user.email, sent, failed, total: users.length,
+    });
+
+    res.json({
+      success: true, sent, failed,
+      message: `Promo email sent to ${sent} user${sent !== 1 ? "s" : ""}.${failed ? ` ${failed} failed.` : ""}`,
+    });
+  } catch (err) {
+    log.error("email", "Product promo mail failed", { message: err.message }, err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── Offer Banner Image Upload ────────────────────────────────────────────────
+// POST /api/admin/offer/upload-images — upload up to 2 banner images to Cloudinary
+adminRouter.post("/offer/upload-images", protect, adminOnly, bannerUpload.array("images", 2), async (req, res) => {
+  try {
+    const urls = (req.files || []).map(f => f.path);
+    res.json({ success: true, urls });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── Offer Promo Mail ─────────────────────────────────────────────────────────
+// POST /api/admin/offer/promo-mail — blast offer banner ad to selected (or all) users
+adminRouter.post("/offer/promo-mail", protect, adminOnly, async (req, res) => {
+  try {
+    const { userIds, offer } = req.body;
+
+    // If offer not passed in body, read from DB
+    let offerData = offer;
+    if (!offerData) {
+      const SiteConfigModel = require("./models").SiteConfig;
+      const doc = await SiteConfigModel.findOne({ key: "promo" });
+      offerData = doc?.value || {};
+    }
+
+    let query = { role: "user", email: { $exists: true, $ne: "" } };
+    if (Array.isArray(userIds) && userIds.length > 0) {
+      query._id = { $in: userIds };
+    }
+
+    const users = await User.find(query).select("name email").lean();
+
+    if (!users.length) {
+      return res.json({ success: true, sent: 0, failed: 0, message: "No users selected." });
+    }
+
+    const { sent, failed } = await sendOfferPromo({ offer: offerData, users });
+
+    log.info("email", "Offer promo mail sent", {
+      sentBy: req.user.email, sent, failed, total: users.length,
+      heading: offerData.heading,
+    });
+
+    res.json({
+      success: true, sent, failed,
+      message: `Offer email sent to ${sent} user${sent !== 1 ? "s" : ""}.${failed ? ` ${failed} failed.` : ""}`,
+    });
+  } catch (err) {
+    log.error("email", "Offer promo mail failed", { message: err.message }, err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // ─── Email Diagnostic Routes ──────────────────────────────────────────────────
 // GET /api/admin/email/check — verify SMTP config and connection
