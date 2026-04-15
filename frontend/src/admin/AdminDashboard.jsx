@@ -20,7 +20,8 @@ import PromoBannerEditor from "./PromoBannerEditor";
 import MarqueeBannerEditor from "./MarqueeBannerEditor";
 import LogViewer from "./LogViewer";
 import AboutPageEditor  from "./AboutPageEditor";
-import { BarChart2, Edit, FileText, Gift, Layers, LayoutDashboard, Mail, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, Tag, TrendingUp, Users, Warehouse, Zap } from "lucide-react";
+import { BarChart2, Edit, FileText, Gift, Layers, LayoutDashboard, Mail, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, Tag, TrendingUp, Users, Warehouse, Zap, Store } from "lucide-react";
+import PlazaAdminSettings from "../BV_Plaza/components/PlazaAdminSettings";
 
 const AdminDashboard = ({ setPage, toast }) => {
   const {isMobile}=useBreakpoint();

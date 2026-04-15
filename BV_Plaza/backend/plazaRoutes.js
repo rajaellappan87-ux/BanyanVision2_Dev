@@ -3,10 +3,10 @@
  * All REST API routes for BV Plaza
  * Mounted at /api/plaza in server.js
  */
-const express  = require("express");
-const router   = express.Router();
 const path     = require("path");
 const crypto   = require("crypto");
+const express  = require(path.join(__dirname, "..", "..", "backend", "node_modules", "express"));
+const router   = express.Router();
 const Razorpay = require(path.join(__dirname, "..", "..", "backend", "node_modules", "razorpay"));
 
 const {
