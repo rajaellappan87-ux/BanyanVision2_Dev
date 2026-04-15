@@ -7,6 +7,7 @@ import { apiGetProducts, apiGetTopReviews } from "../api";
 import ProductCard from "../components/ui/ProductCard";
 import { Leaf, Palette, Zap, Heart } from "lucide-react";
 import { Spinner, SecLabel } from "../components/ui/Common";
+import BVPlazaPanel from "../BV_Plaza/BVPlazaPanel";
 
 /* ── HOME ────────────────────────────────────────────────────────────────────── */
 const HomePage = ({ setPage, toast }) => {
@@ -108,6 +109,9 @@ const HomePage = ({ setPage, toast }) => {
           </div>
         )}
       </section>
+
+      {/* ─ BV PLAZA PANEL — visibility controlled by admin ─ */}
+      <BVPlazaPanel setPage={setPage}/>
 
       {/* ─ CRAFT STRIP — admin-editable via Admin → Marquee Banner ─ */}
       {marquee.active!==false&&(

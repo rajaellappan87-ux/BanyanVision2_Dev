@@ -33,6 +33,7 @@ const productSchema = new mongoose.Schema({
   price:         { type: Number, required: true, min: 0 },
   originalPrice: { type: Number, default: null },
   category:      { type: String, required: true },
+  subCategory:   { type: String, default: "" },
   fabric:        { type: String, default: "" },
   occasion:      { type: String, default: "" },
   care:          { type: String, default: "" },

@@ -20,7 +20,8 @@ import PromoBannerEditor from "./PromoBannerEditor";
 import MarqueeBannerEditor from "./MarqueeBannerEditor";
 import LogViewer from "./LogViewer";
 import AboutPageEditor  from "./AboutPageEditor";
-import { BarChart2, Edit, FileText, Gift, Layers, LayoutDashboard, Mail, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, Tag, TrendingUp, Users, Warehouse, Zap } from "lucide-react";
+import { BarChart2, Edit, FileText, Gift, Layers, LayoutDashboard, Mail, Package, Percent, PlusCircle, Save, Settings, ShoppingBag, Tag, TrendingUp, Users, Warehouse, Zap, Store } from "lucide-react";
+import PlazaAdminSettings from "../BV_Plaza/components/PlazaAdminSettings";
 
 const AdminDashboard = ({ setPage, toast }) => {
   const {isMobile}=useBreakpoint();
@@ -33,7 +34,7 @@ const AdminDashboard = ({ setPage, toast }) => {
   const [users,setUsers]=useState([]);
   const [coupons,setCoupons]=useState([]);
   const [loading,setLoading]=useState(true);
-  const [pf,setPf]=useState({name:"",description:"",price:"",originalPrice:"",category:"Kurtas & Sets",fabric:"",occasion:"",care:"",stock:"",badge:"",featured:false,trending:false});
+  const [pf,setPf]=useState({name:"",description:"",price:"",originalPrice:"",category:"Kurtas & Sets",subCategory:"",fabric:"",occasion:"",care:"",stock:"",badge:"",featured:false,trending:false});
   const [pSizes,setPSizes]=useState([]);
   const [pColors,setPColors]=useState([]);
   const [pFiles,setPFiles]=useState([]);
@@ -89,8 +90,8 @@ const AdminDashboard = ({ setPage, toast }) => {
     setSaving(false);
   };
 
-  const resetP=()=>{setPf({name:"",description:"",price:"",originalPrice:"",category:Object.keys(liveCat)[0]||"Kurtas & Sets",fabric:"",occasion:"",care:"",stock:"",badge:"",featured:false,trending:false});setPSizes([]);setPColors([]);setFilesSync([]);setEditId(null);setExImgs([]);};
-  const editProd=p=>{setPf({name:p.name,description:p.description,price:p.price,originalPrice:p.originalPrice||"",category:p.category,fabric:p.fabric||"",occasion:p.occasion||"",care:p.care||"",stock:p.stock,badge:p.badge||"",featured:p.featured,trending:p.trending});setPSizes(p.sizes||[]);setPColors(p.colors||[]);setExImgs(p.images||[]);setEditId(p._id);setFilesSync([]);setTab("add-product");window.scrollTo({top:0,behavior:"smooth"});};
+  const resetP=()=>{setPf({name:"",description:"",price:"",originalPrice:"",category:Object.keys(liveCat)[0]||"Kurtas & Sets",subCategory:"",fabric:"",occasion:"",care:"",stock:"",badge:"",featured:false,trending:false});setPSizes([]);setPColors([]);setFilesSync([]);setEditId(null);setExImgs([]);};
+  const editProd=p=>{setPf({name:p.name,description:p.description,price:p.price,originalPrice:p.originalPrice||"",category:p.category,subCategory:p.subCategory||"",fabric:p.fabric||"",occasion:p.occasion||"",care:p.care||"",stock:p.stock,badge:p.badge||"",featured:p.featured,trending:p.trending});setPSizes(p.sizes||[]);setPColors(p.colors||[]);setExImgs(p.images||[]);setEditId(p._id);setFilesSync([]);setTab("add-product");window.scrollTo({top:0,behavior:"smooth"});};
   const delProd=async id=>{if(!window.confirm("Delete?"))return;await apiDeleteProduct(id);setProducts(ps=>ps.filter(p=>p._id!==id));toast("Deleted");};
   const updateSt=async(id,status)=>{await apiUpdateStatus(id,status);setOrders(os=>os.map(o=>o._id===id?{...o,status}:o));toast(`→ ${status}`);};
   const delImg=async pid=>{await apiDeleteProductImage(editId,pid);setExImgs(imgs=>imgs.filter(i=>i.public_id!==pid));toast("Image removed");};
@@ -135,7 +136,7 @@ const AdminDashboard = ({ setPage, toast }) => {
   const closePromoModal=()=>{setPromoMail(null);setPromoUsers([]);setPromoChecked({});setPromoResult(null);setPromoSearch("");};
 
   const goTab=k=>{setTab(k);if(isMobile)setDrawer(false);};
-  const SIDE=[["overview",LayoutDashboard,"Overview"],["orders",ShoppingBag,"Orders"],["products",Package,"Products"],["add-product",PlusCircle,"Add Product"],["inventory",Warehouse,"Inventory"],["customers",Users,"Customers"],["analytics",BarChart2,"Analytics"],["coupons",Tag,"Coupons"],["categories",Layers,"Categories"],["promo",Gift,"Offer Banner"],["marquee",Zap,"Marquee Banner"],["about-editor",FileText,"About Page"],["settings",Settings,"Site Settings"],["logs",BarChart2,"Log Audit"]];
+  const SIDE=[["overview",LayoutDashboard,"Overview"],["orders",ShoppingBag,"Orders"],["products",Package,"Products"],["add-product",PlusCircle,"Add Product"],["inventory",Warehouse,"Inventory"],["customers",Users,"Customers"],["analytics",BarChart2,"Analytics"],["coupons",Tag,"Coupons"],["categories",Layers,"Categories"],["promo",Gift,"Offer Banner"],["marquee",Zap,"Marquee Banner"],["about-editor",FileText,"About Page"],["settings",Settings,"Site Settings"],["plaza",Store,"BV Plaza"],["logs",BarChart2,"Log Audit"]];
   const iStyle={background:"var(--ivory2)",border:"1.5px solid var(--border2)",color:"var(--text)",padding:"10px 12px",fontSize:13,borderRadius:12,outline:"none",width:"100%",boxSizing:"border-box",fontWeight:500};
   const lStyle={display:"block",fontSize:10,fontWeight:700,color:"var(--muted)",letterSpacing:.5,textTransform:"uppercase",marginBottom:6};
 
@@ -256,11 +257,23 @@ const AdminDashboard = ({ setPage, toast }) => {
                   </div>
                 ))}
               </div>
-              <div style={{marginBottom:16}}>
-                <label style={lStyle}>Category</label>
-                <select value={pf.category} onChange={e=>setPf(f=>({...f,category:e.target.value}))} style={iStyle}>
-                  {Object.keys(liveCat).map(c=><option key={c}>{c}</option>)}
-                </select>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:16,marginBottom:16}}>
+                <div>
+                  <label style={lStyle}>Category</label>
+                  <select value={pf.category} onChange={e=>setPf(f=>({...f,category:e.target.value,subCategory:""}))} style={iStyle}>
+                    {Object.keys(liveCat).map(c=><option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={lStyle}>Sub-Category</label>
+                  <select value={pf.subCategory} onChange={e=>setPf(f=>({...f,subCategory:e.target.value}))} style={{...iStyle,color:pf.subCategory?"var(--text)":"var(--muted)"}}>
+                    <option value="">— None —</option>
+                    {(liveCat[pf.category]?.subs||[]).map(s=><option key={s} value={s}>{s}</option>)}
+                  </select>
+                  {(liveCat[pf.category]?.subs||[]).length===0&&(
+                    <div style={{fontSize:10,color:"var(--muted)",marginTop:4,fontWeight:500}}>No sub-categories for this category yet</div>
+                  )}
+                </div>
               </div>
               <div style={{marginBottom:16}}>
                 <label style={lStyle}>Description</label>
@@ -435,6 +448,17 @@ const AdminDashboard = ({ setPage, toast }) => {
         {/* SITE SETTINGS */}
         {tab==="settings"&&(
           <SiteSettings toast={toast}/>
+        )}
+
+        {/* BV PLAZA */}
+        {tab==="plaza"&&(
+          <div style={{padding:"28px 0"}}>
+            <div style={{marginBottom:24}}>
+              <h2 style={{fontSize:20,fontWeight:800,margin:"0 0 4px",color:"#1e293b"}}>BV Plaza Settings</h2>
+              <p style={{fontSize:13,color:"#64748b",margin:0}}>Control BV Plaza visibility on the home page, manage stalls and withdrawals.</p>
+            </div>
+            <PlazaAdminSettings toast={toast}/>
+          </div>
         )}
 
         {/* LOG AUDIT */}
