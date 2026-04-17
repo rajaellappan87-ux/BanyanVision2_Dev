@@ -42,6 +42,7 @@ const AdminDashboard = ({ setPage, toast }) => {
   const [editId,setEditId]=useState(null);
   const [exImgs,setExImgs]=useState([]);
   const [saving,setSaving]=useState(false);
+  const [uploaderKey,setUploaderKey]=useState(0);
   const setFilesSync = (files) => { pFilesRef.current = files; setPFiles(files); };
   const [cf,setCf]=useState({code:"",type:"percent",discount:"",desc:"",minOrder:0});
   const [promoMail,setPromoMail]=useState(null);       // product object | null
@@ -90,7 +91,7 @@ const AdminDashboard = ({ setPage, toast }) => {
     setSaving(false);
   };
 
-  const resetP=()=>{setPf({name:"",description:"",price:"",originalPrice:"",category:Object.keys(liveCat)[0]||"Kurtas & Sets",subCategory:"",fabric:"",occasion:"",care:"",stock:"",badge:"",featured:false,trending:false});setPSizes([]);setPColors([]);setFilesSync([]);setEditId(null);setExImgs([]);};
+  const resetP=()=>{setPf({name:"",description:"",price:"",originalPrice:"",category:Object.keys(liveCat)[0]||"Kurtas & Sets",subCategory:"",fabric:"",occasion:"",care:"",stock:"",badge:"",featured:false,trending:false});setPSizes([]);setPColors([]);setFilesSync([]);setEditId(null);setExImgs([]);setUploaderKey(k=>k+1);};
   const editProd=p=>{setPf({name:p.name,description:p.description,price:p.price,originalPrice:p.originalPrice||"",category:p.category,subCategory:p.subCategory||"",fabric:p.fabric||"",occasion:p.occasion||"",care:p.care||"",stock:p.stock,badge:p.badge||"",featured:p.featured,trending:p.trending});setPSizes(p.sizes||[]);setPColors(p.colors||[]);setExImgs(p.images||[]);setEditId(p._id);setFilesSync([]);setTab("add-product");window.scrollTo({top:0,behavior:"smooth"});};
   const delProd=async id=>{if(!window.confirm("Delete?"))return;await apiDeleteProduct(id);setProducts(ps=>ps.filter(p=>p._id!==id));toast("Deleted");};
   const updateSt=async(id,status)=>{await apiUpdateStatus(id,status);setOrders(os=>os.map(o=>o._id===id?{...o,status}:o));toast(`→ ${status}`);};
@@ -307,7 +308,7 @@ const AdminDashboard = ({ setPage, toast }) => {
                 </div>
               </div>
               <div style={{marginBottom:24,padding:20,background:"var(--ivory2)",borderRadius:"14px",border:"1.5px solid var(--border)"}}>
-                <ImageUploader existingImages={exImgs} onFilesChange={setFilesSync} onDeleteExisting={delImg}/>
+                <ImageUploader key={uploaderKey} existingImages={exImgs} onFilesChange={setFilesSync} onDeleteExisting={delImg}/>
               </div>
               <div style={{display:"flex",gap:12}}>
                 <button className="btn btn-rose" onClick={saveProd} disabled={saving} style={{flex:2,padding:"14px 0",fontSize:14,opacity:saving?.75:1}}>{saving?"Saving…":editId?"Update Product":"Create Product"}</button>

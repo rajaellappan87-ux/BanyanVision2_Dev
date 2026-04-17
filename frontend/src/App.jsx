@@ -34,6 +34,7 @@ import BVPlazaApp from "./BV_Plaza/BVPlazaApp";
 // ─── App Shell ────────────────────────────────────────────────────────────────
 function AppShell() {
   const [page, setPage] = useState("home");
+  const [shopCat, setShopCat] = useState("");
   const { toasts, toast } = useToast();
   const { user, loading } = useAuth();
   React.useEffect(() => {
@@ -43,7 +44,14 @@ function AppShell() {
     }
   }, [user?._id]);
   const navigate = useCallback(p => {
-    setPage(p);
+    // "shop:CategoryName" → go to shop pre-filtered to that category
+    if (p.startsWith("shop:")) {
+      setShopCat(p.slice(5));
+      setPage("shop");
+    } else {
+      if (p === "shop") setShopCat(""); // plain shop link clears category filter
+      setPage(p);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
     // Keep URL in sync for shareable product links
     if (p.startsWith("product-")) {
@@ -98,7 +106,7 @@ function AppShell() {
       <Header page={page} setPage={navigate}/>
       <main>
         {page==="home"    && <HomePage      setPage={navigate} toast={toast}/>}
-        {page==="shop"    && <ShopPage      setPage={navigate} toast={toast}/>}
+        {page==="shop"    && <ShopPage      setPage={navigate} toast={toast} initialCat={shopCat}/>}
         {page==="about"   && <AboutPage     setPage={navigate}/>}
         {page==="cart"    && <CartPage      setPage={navigate} toast={toast}/>}
         {page==="checkout"&& user && <CheckoutPage  setPage={navigate} toast={toast}/>}

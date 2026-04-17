@@ -121,7 +121,15 @@ app.use("/api/config",   configRouter);
 app.use("/api/logs",     logRouter);
 app.use("/api/plaza",    plazaRouter);
 
-app.get("/api/health", (_, res) => res.json({ status: "ok", timestamp: new Date(), version: "1.0.0" }));
+app.get("/api/health", (_, res) => {
+  const dbState = ["disconnected","connected","connecting","disconnecting"];
+  res.json({
+    status:    "ok",
+    db:        dbState[mongoose.connection.readyState] || "unknown",
+    timestamp: new Date(),
+    version:   "1.0.0",
+  });
+});
 
 // DB info — admin only — confirms which database is connected
 app.get("/api/db-info", async (req, res) => {
@@ -207,40 +215,65 @@ const seedDatabase = async () => {
 };
 
 // ─── Start server ─────────────────────────────────────────────────────────────
+// IMPORTANT: bind the port FIRST so Railway's health check passes immediately,
+// then connect MongoDB in the background. Previously the server only listened
+// inside mongoose.connect().then() — if Atlas was slow the health check timed out.
 const PORT = process.env.PORT || 5000;
+const http = require("http");
+const { Server } = require("socket.io");
 
+const httpServer = http.createServer(app);
+
+// Attach socket.io (BV Plaza real-time)
+try {
+  const io = new Server(httpServer, { cors: { origin: "*", credentials: true } });
+  require(path.join(__dirname, "..", "BV_Plaza", "backend", "plazaSocket"))(io);
+  console.log("✅ BV Plaza socket.io attached");
+} catch (socketErr) {
+  console.warn("⚠️  BV Plaza: socket.io setup failed:", socketErr.message);
+}
+
+// ── Bind port immediately — health check works before DB is ready ─────────────
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server listening on port ${PORT}`);
+  log.info("system", "Server started", { port: PORT, env: process.env.NODE_ENV, version: "1.0.0" });
+});
+
+httpServer.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.warn(`⚠️  Port ${PORT} busy — retrying in 2s...`);
+    httpServer.close();
+    setTimeout(() => httpServer.listen(PORT, () =>
+      console.log(`🚀 Server running on port ${PORT} (retry OK)`)
+    ), 2000);
+  } else {
+    console.error("❌ Server error:", err);
+    process.exit(1);
+  }
+});
+
+// ── Connect MongoDB in the background ─────────────────────────────────────────
 mongoose.set("autoIndex",  false); // prevent index builds timing out on Atlas M0
 mongoose.set("autoCreate", false); // prevent createCollection() calls on first query
 
+// Connection event handlers — registered before connect() so they fire on reconnect too
+mongoose.connection.on("disconnected", () => log.warn("db", "MongoDB disconnected — will auto-reconnect"));
+mongoose.connection.on("reconnected",  () => log.info("db", "MongoDB reconnected successfully"));
+mongoose.connection.on("error", (err)  => log.error("db", "MongoDB connection error", { message: err.message }, err));
+
 mongoose.connect(process.env.MONGO_URI, {
-  // ── Connection resilience ──────────────────────────────
-  serverSelectionTimeoutMS: 10000,  // 10s to find a server
-  socketTimeoutMS:          45000,  // 45s socket timeout
-  connectTimeoutMS:         10000,  // 10s to establish connection
-  heartbeatFrequencyMS:     10000,  // ping Atlas every 10s (keeps free tier alive)
-  maxPoolSize:              10,     // max 10 simultaneous connections
-  minPoolSize:              2,      // keep 2 connections warm
-  // ── Auto-reconnect on network blip ────────────────────
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS:          45000,
+  connectTimeoutMS:         10000,
+  heartbeatFrequencyMS:     10000,
+  maxPoolSize:              10,
+  minPoolSize:              2,
   retryWrites:              true,
   retryReads:               true,
 })
   .then(async () => {
-
-  // ── MongoDB connection event handlers ─────────────────────────────────────
-  mongoose.connection.on("disconnected", () => {
-    log.warn("db", "MongoDB disconnected — will auto-reconnect");
-    // Mongoose auto-reconnects — no manual action needed
-  });
-  mongoose.connection.on("reconnected", () => {
-    log.info("db", "MongoDB reconnected successfully");
-  });
-  mongoose.connection.on("error", (err) => {
-    log.error("db", "MongoDB connection error", { message: err.message }, err);
-    // Do NOT exit — let Mongoose handle reconnection
-  });
-
     log.db("MongoDB connected successfully", { uri: process.env.MONGO_URI?.split("@")[1] || "connected" });
-    log.env(); // log all env var status
+    log.env();
     await seedDatabase();
     await verifySmtp();
 
@@ -249,72 +282,29 @@ mongoose.connect(process.env.MONGO_URI, {
       const db = mongoose.connection.db;
       const plazaCollections = ["stalls","plazaproducts","stallcoupons","bankdetails","wallets","wallettransactions","plazaorders","plazachats","withdrawals"];
       const existing = (await db.listCollections().toArray()).map(c => c.name);
-      console.log("📋 Existing collections:", existing.join(", "));
       for (const col of plazaCollections) {
         if (!existing.includes(col)) {
           await db.createCollection(col);
           console.log(`✅ BV Plaza: created collection '${col}'`);
-        } else {
-          console.log(`✔  BV Plaza: collection '${col}' already exists`);
         }
       }
       console.log("✅ BV Plaza: all collections ready");
     } catch (e) {
-      console.error("❌ BV Plaza collection pre-init error:", e.message, e.stack);
+      console.error("❌ BV Plaza collection pre-init error:", e.message);
     }
-
-    // ── Socket.io for BV Plaza real-time features ─────────────────────────────
-    let server;
-    try {
-      const http      = require("http");
-      const { Server } = require("socket.io");
-      const httpServer = http.createServer(app);
-      const io = new Server(httpServer, { cors: { origin: "*", credentials: true } });
-      require(path.join(__dirname, "..", "BV_Plaza", "backend", "plazaSocket"))(io);
-      server = httpServer.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT} (with BV Plaza socket.io)`);
-        log.info("system", `Server started`, { port: PORT, env: process.env.NODE_ENV, version: "1.0.0" });
-      });
-    } catch (socketErr) {
-      // socket.io not installed — run without real-time (install: npm install socket.io)
-      console.warn("⚠️  BV Plaza: socket.io not found. Real-time features disabled. Run: npm install socket.io");
-      server = app.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
-        log.info("system", `Server started`, { port: PORT, env: process.env.NODE_ENV, version: "1.0.0" });
-      });
-    }
-
-    // ── Handle port already in use (EADDRINUSE) ──────────────────────────────
-    // Happens on Windows when nodemon restarts before OS releases the port.
-    // Wait 2 seconds and retry once — almost always resolves it.
-    server.on("error", (err) => {
-      if (err.code === "EADDRINUSE") {
-        console.warn(`⚠️  Port ${PORT} busy — retrying in 2s...`);
-        server.close();
-        setTimeout(() => {
-          app.listen(PORT, () =>
-            console.log(`🚀 Server running on port ${PORT} (retry OK)`)
-          );
-        }, 2000);
-      } else {
-        console.error("❌ Server error:", err);
-        process.exit(1);
-      }
-    });
-
-    // ── Graceful shutdown — release port cleanly on Ctrl+C or nodemon restart
-    const shutdown = async (signal) => {
-      console.log(`
-🛑 ${signal} received — closing server...`);
-      server.close(() => console.log("✅ Server closed cleanly"));
-      try {
-        await mongoose.connection.close(); // Mongoose 8.x — no callback
-        console.log("✅ MongoDB disconnected");
-      } catch {}
-      process.exit(0);
-    };
-
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
-    process.on("SIGINT",  () => shutdown("SIGINT"));
   })
-  .catch(err => { log.fatal("db", "MongoDB connection failed", { message: err.message }); process.exit(1); });
+  .catch(err => {
+    // Log but do NOT exit — server is already listening and can still serve health checks
+    console.error("❌ MongoDB connection failed:", err.message);
+    log.fatal("db", "MongoDB connection failed — server still running", { message: err.message });
+  });
+
+// ── Graceful shutdown ─────────────────────────────────────────────────────────
+const shutdown = async (signal) => {
+  console.log(`\n🛑 ${signal} received — closing server...`);
+  httpServer.close(() => console.log("✅ HTTP server closed"));
+  try { await mongoose.connection.close(); console.log("✅ MongoDB disconnected"); } catch {}
+  process.exit(0);
+};
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT",  () => shutdown("SIGINT"));

@@ -153,7 +153,7 @@ const HomePage = ({ setPage, toast }) => {
           </div>
           <div style={{display:"grid",gridTemplateColumns:`repeat(${isMobile?3:6},1fr)`,gap:isMobile?10:16}}>
             {Object.entries(catCfg).map(([name,cfg])=>(
-              <button key={name} onClick={()=>setPage("shop")}
+              <button key={name} onClick={()=>setPage("shop:"+name)}
                 style={{padding:isMobile?"18px 8px":"28px 14px",borderRadius:"20px",border:"1.5px solid var(--border)",background:cfg.light,display:"flex",flexDirection:"column",alignItems:"center",gap:10,cursor:"pointer",transition:"all .3s cubic-bezier(.25,.46,.45,.94)",boxShadow:"0 2px 10px rgba(0,0,0,.04)"}}
                 onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-6px) scale(1.03)";e.currentTarget.style.boxShadow="0 16px 40px rgba(0,0,0,.1)";e.currentTarget.style.borderColor="var(--rose)";}}
                 onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="0 2px 10px rgba(0,0,0,.04)";e.currentTarget.style.borderColor="var(--border)";}}>
