@@ -54,8 +54,42 @@ const { User, Product, Coupon } = require(path.join(__dirname, "models"));
 const app = express();
 app.set("trust proxy", 1); // fix express-rate-limit X-Forwarded-For warning
 
+// ─── CORS — must be first so preflight OPTIONS is answered before anything else
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    const allowed = [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "https://banyanvision.com",
+      "https://www.banyanvision.com",
+      process.env.CLIENT_URL,
+    ].filter(Boolean);
+    if (
+      allowed.includes(origin) ||
+      origin.endsWith(".banyanvision.com") ||
+      origin.endsWith(".githubpreview.dev") ||
+      origin.endsWith(".app.github.dev") ||
+      origin.endsWith(".ngrok-free.app") ||
+      origin.endsWith(".ngrok.io") ||
+      origin.endsWith(".loca.lt")
+    ) return callback(null, true);
+    return callback(null, true); // allow all for flexibility
+  },
+  credentials: true,
+  methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization","X-Requested-With"],
+};
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // handle all preflight requests
+
 // ─── Security & Performance Middleware ───────────────────────────────────────
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false, // allow cross-origin resource loading
+}));
 app.use(compression());
 
 // Rate limiting — generous in dev, strict in prod
@@ -64,7 +98,7 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isDev ? 2000 : 200,          // dev: 2000/15min  prod: 200/15min
   message: { success:false, message:"Too many requests. Please try again later." },
-  skip: (req) => req.path === "/api/health", // never rate-limit health check
+  skip: (req) => req.path === "/api/health" || req.method === "OPTIONS",
   validate: { xForwardedForHeader: false },  // suppress proxy warning
 });
 const authLimiter = rateLimit({
@@ -75,25 +109,6 @@ const authLimiter = rateLimit({
 
 app.use("/api/auth", authLimiter);
 app.use("/api", limiter);
-
-// ─── CORS ─────────────────────────────────────────────────────────────────────
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    const allowed = ["http://localhost:3000","http://127.0.0.1:3000", process.env.CLIENT_URL].filter(Boolean);
-    if (
-      allowed.includes(origin) ||
-      origin.endsWith(".githubpreview.dev") ||
-      origin.endsWith(".app.github.dev") ||
-      origin.endsWith(".github.dev") ||
-      origin.endsWith(".ngrok-free.app") ||
-      origin.endsWith(".ngrok.io") ||
-      origin.endsWith(".loca.lt")
-    ) return callback(null, true);
-    return callback(null, true); // allow all for local dev/preview sharing
-  },
-  credentials: true,
-}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
