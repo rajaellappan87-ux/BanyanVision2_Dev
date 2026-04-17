@@ -77,9 +77,10 @@ const productRouter = express.Router();
 // GET /api/products  (with filter/sort/search/pagination)
 productRouter.get("/", async (req, res) => {
   try {
-    const { category, search, sort, minPrice, maxPrice, featured, trending, page = 1, limit = 12 } = req.query;
+    const { category, subCategory, search, sort, minPrice, maxPrice, featured, trending, page = 1, limit = 12 } = req.query;
     const query = {};
     if (category && category !== "All") query.category = category;
+    if (subCategory) query.subCategory = subCategory;
     if (featured === "true") query.featured = true;
     if (trending === "true") query.trending = true;
     if (search) query.name = { $regex: search, $options: "i" };
