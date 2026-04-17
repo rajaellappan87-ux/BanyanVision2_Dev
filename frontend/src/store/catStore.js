@@ -55,8 +55,14 @@ export const loadCatConfigFromDB = async () => {
   try {
     const res = await apiGetConfig(CAT_KEY);
     if (res?.data?.value && typeof res.data.value === "object") {
-      _globalCatConfig = res.data.value;
-      saveLocal(res.data.value);
+      // Merge with defaults so that subs/icons added to DEFAULT_CAT_CONFIG
+      // are never lost when an older DB value is loaded
+      const merged = {};
+      Object.entries(res.data.value).forEach(([cat, data]) => {
+        merged[cat] = { ...DEFAULT_CAT_CONFIG[cat], ...data };
+      });
+      _globalCatConfig = merged;
+      saveLocal(merged);
       notify();
     }
   } catch { /* use localStorage fallback silently */ }
