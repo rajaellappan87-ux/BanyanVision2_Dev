@@ -45,7 +45,7 @@ const rateLimit    = require("express-rate-limit");
 // Using path.join(__dirname, ...) ensures modules resolve correctly
 // regardless of which directory you run `node` from
 const { authRouter, productRouter, reviewRouter, orderRouter, wishlistRouter, couponRouter, adminRouter, configRouter, logRouter } = require(path.join(__dirname, "routes"));
-const plazaRouter = require(path.join(__dirname, "..", "BV_Plaza", "backend", "plazaRoutes"));
+const plazaRouter = require(path.join(__dirname, "plaza", "plazaRoutes"));
 const { verifySmtp } = require(path.join(__dirname, "mailer"));
 const log = require(path.join(__dirname, "logger"));
 const { errorHandler } = require(path.join(__dirname, "middleware"));
@@ -227,7 +227,7 @@ const httpServer = http.createServer(app);
 // Attach socket.io (BV Plaza real-time)
 try {
   const io = new Server(httpServer, { cors: { origin: "*", credentials: true } });
-  require(path.join(__dirname, "..", "BV_Plaza", "backend", "plazaSocket"))(io);
+  require(path.join(__dirname, "plaza", "plazaSocket"))(io);
   console.log("✅ BV Plaza socket.io attached");
 } catch (socketErr) {
   console.warn("⚠️  BV Plaza: socket.io setup failed:", socketErr.message);
