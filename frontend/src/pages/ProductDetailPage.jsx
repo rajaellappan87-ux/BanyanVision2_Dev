@@ -193,7 +193,7 @@ const ProductDetailPage = ({ productId, setPage, toast }) => {
             </div>
 
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              {[["Fabric",data.fabric],["Occasion",data.occasion],["Care",data.care],["Category",data.category]].map(([k,v])=>(
+              {[["Fabric",data.fabric],["Occasion",data.occasion],["Care",data.care],["Category",data.category],data.subCategory?["Sub-Category",data.subCategory]:null].filter(Boolean).map(([k,v])=>(
                 <div key={k} style={{padding:"12px 14px",background:"#fff",borderRadius:12,border:"1.5px solid var(--border)"}}>
                   <div style={{fontSize:9,fontWeight:700,letterSpacing:1.5,color:"var(--muted)",textTransform:"uppercase",marginBottom:3}}>{k}</div>
                   <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{v||"—"}</div>
