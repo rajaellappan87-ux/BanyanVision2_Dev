@@ -7,7 +7,7 @@ const { body, validationResult } = require("express-validator");
 const path = require("path");
 const { User, Product, Review, Order, Coupon } = require(path.join(__dirname, "models"));
 const { protect, adminOnly, upload, bannerUpload, cloudinary } = require(path.join(__dirname, "middleware"));
-const { sendOrderConfirmation, sendStatusUpdate, sendThankYou, sendReviewAck, sendSafe, sendOrdersExportEmail, sendProductPromo, sendOfferPromo, verifySmtp, diagnoseMail } = require(path.join(__dirname, "mailer"));
+const { sendOrderConfirmation, sendStatusUpdate, sendThankYou, sendReviewAck, sendSafe, sendOrdersExportEmail, sendProductPromo, sendOfferPromo, sendPasswordReset, verifySmtp, diagnoseMail } = require(path.join(__dirname, "mailer"));
 
 const router = express.Router();
 
@@ -20,31 +20,114 @@ const authRouter = express.Router();
 
 // POST /api/auth/register
 authRouter.post("/register", [
-  body("name").notEmpty(),
-  body("email").isEmail(),
-  body("password").isLength({ min: 6 }),
+  body("name").notEmpty().withMessage("Name is required"),
+  body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
 ], async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
+  if (!errors.isEmpty()) return res.status(400).json({ success: false, message: errors.array()[0].msg });
   try {
-    const { name, email, password } = req.body;
-    if (await User.findOne({ email })) return res.status(400).json({ success: false, message: "Email already registered" });
-    const user = await User.create({ name, email, password });
-    log.auth("New user registered", { email: user.email, role: user.role }, null, { ip: req.ip });
-    res.status(201).json({ success: true, token: signToken(user._id), user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    const { name, password } = req.body;
+    let { email, phone } = req.body;
+
+    // Require at least email or phone
+    const hasEmail = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    const hasPhone = phone && /^[6-9]\d{9}$/.test(phone.replace(/\s+/g, ""));
+
+    if (!hasEmail && !hasPhone)
+      return res.status(400).json({ success: false, message: "Please provide a valid email or 10-digit phone number" });
+
+    // Normalize
+    if (hasPhone) phone = phone.replace(/\s+/g, "");
+    if (hasEmail) email = email.trim().toLowerCase();
+
+    // Phone-only: generate synthetic internal email
+    if (!hasEmail && hasPhone) email = `${phone}@bv.phone`;
+
+    // Duplicate checks
+    if (hasEmail && await User.findOne({ email }))
+      return res.status(400).json({ success: false, message: "Email already registered" });
+    if (hasPhone && await User.findOne({ phone }))
+      return res.status(400).json({ success: false, message: "Phone number already registered" });
+
+    const user = await User.create({ name, email, phone: hasPhone ? phone : "", password });
+    log.auth("New user registered", { email: user.email, phone: user.phone, role: user.role }, null, { ip: req.ip });
+    res.status(201).json({ success: true, token: signToken(user._id), user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role } });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-// POST /api/auth/login
+// POST /api/auth/login  (email or phone + password)
 authRouter.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email }).select("+password");
-    if (!user || !(await user.matchPassword(password))) {
-      return res.status(401).json({ success: false, message: "Invalid email or password" });
+    const { email, phone, password } = req.body;
+    const identifier = (email || "").trim().toLowerCase() || (phone || "").replace(/\s+/g, "");
+    if (!identifier || !password)
+      return res.status(400).json({ success: false, message: "Please provide email/phone and password" });
+
+    // Find by email OR by phone (including phone-only accounts stored as synthetic email)
+    const isPhone = /^[6-9]\d{9}$/.test(identifier);
+    let user;
+    if (isPhone) {
+      user = await User.findOne({ phone: identifier }).select("+password");
+      // Also try synthetic email in case registered that way
+      if (!user) user = await User.findOne({ email: `${identifier}@bv.phone` }).select("+password");
+    } else {
+      user = await User.findOne({ email: identifier }).select("+password");
     }
-    log.auth("User logged in", { email: user.email, role: user.role }, null, { userId: user._id, ip: req.ip });
-    res.json({ success: true, token: signToken(user._id), user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone, address: user.address } });
+
+    if (!user || !(await user.matchPassword(password)))
+      return res.status(401).json({ success: false, message: "Invalid email/phone or password" });
+
+    log.auth("User logged in", { email: user.email, phone: user.phone, role: user.role }, null, { userId: user._id, ip: req.ip });
+    res.json({ success: true, token: signToken(user._id), user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, address: user.address } });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// POST /api/auth/forgot-password
+authRouter.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: "Email is required" });
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+resetPasswordToken +resetPasswordExpire");
+    // Always respond the same to prevent email enumeration
+    if (!user) return res.json({ success: true, message: "If that email is registered, a reset link has been sent." });
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken  = crypto.createHash("sha256").update(rawToken).digest("hex");
+    user.resetPasswordExpire = Date.now() + 30 * 60 * 1000; // 30 minutes
+    await user.save({ validateBeforeSave: false });
+
+    const clientUrl = process.env.CLIENT_URL || "https://www.banyanvision.com";
+    const resetUrl  = `${clientUrl}?reset=${rawToken}`;
+    try {
+      await sendPasswordReset({ email: user.email, name: user.name, resetUrl });
+    } catch (mailErr) {
+      user.resetPasswordToken  = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+      return res.status(500).json({ success: false, message: "Email could not be sent. Please try again." });
+    }
+    res.json({ success: true, message: "Password reset email sent. Check your inbox." });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// POST /api/auth/reset-password/:token
+authRouter.post("/reset-password/:token", async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password || password.length < 6) return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+    const hashed = crypto.createHash("sha256").update(req.params.token).digest("hex");
+    const user = await User.findOne({
+      resetPasswordToken:  hashed,
+      resetPasswordExpire: { $gt: Date.now() },
+    }).select("+resetPasswordToken +resetPasswordExpire");
+    if (!user) return res.status(400).json({ success: false, message: "Reset link is invalid or has expired." });
+
+    user.password            = password;
+    user.resetPasswordToken  = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.json({ success: true, message: "Password updated successfully. You can now sign in." });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 

@@ -11,7 +11,7 @@ import { Stars, Spinner } from "../components/ui/Common";
 import { useSettings } from "../store/contentStore";
 
 /* ── PRODUCT DETAIL ──────────────────────────────────────────────────────────── */
-const ProductDetailPage = ({ productId, setPage, toast }) => {
+const ProductDetailPage = ({ productId, setPage, toast, fromCat = "", fromSubCat = "" }) => {
   const {isMobile}=useBreakpoint();
   const st=useSettings();
   const {user}=useAuth();
@@ -83,15 +83,60 @@ const ProductDetailPage = ({ productId, setPage, toast }) => {
   const cfg=catCfg[data.category]||{grad:"linear-gradient(135deg,var(--rose),var(--saffron))",light:"var(--roseL)",icon:"👗"};
   const iStyle={background:"var(--ivory2)",border:"1.5px solid var(--border2)",color:"var(--text)",padding:"12px 14px",fontSize:13,borderRadius:12,outline:"none",width:"100%",fontWeight:500};
 
+  const goCollection = () => {
+    const cat = fromCat || data.category;
+    const sub = fromSubCat || data.subCategory || "";
+    setPage("shop:" + cat + (sub ? ":" + sub : ""));
+  };
+
   return (
     <div style={{background:"var(--ivory)",minHeight:"100vh"}}>
+      {/* ── Fixed floating back button (bottom-right) ── */}
+      <button onClick={goCollection} style={{
+        position:"fixed", bottom:isMobile?80:32, right:isMobile?16:32, zIndex:500,
+        display:"flex", alignItems:"center", gap:8,
+        background:"linear-gradient(135deg,var(--rose),var(--saffron))",
+        color:"#fff", border:"none", borderRadius:50,
+        padding:isMobile?"12px 18px":"13px 22px",
+        fontSize:isMobile?12:13, fontWeight:700, cursor:"pointer",
+        boxShadow:"0 6px 24px rgba(194,24,91,.4)",
+        transition:"all .2s",
+      }}
+        onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px) scale(1.04)"}
+        onMouseLeave={e=>e.currentTarget.style.transform="none"}
+      >
+        <span style={{fontSize:15}}>‹</span>
+        {isMobile ? (fromSubCat || data.subCategory || "Collection") : `Back to ${fromSubCat || data.subCategory || data.category}`}
+      </button>
+
       <div style={{maxWidth:1300,margin:"0 auto",padding:isMobile?"16px":"40px 80px"}}>
-        <nav style={{display:"flex",gap:6,alignItems:"center",marginBottom:24,fontSize:12,color:"var(--muted)",fontWeight:600}}>
-          <span onClick={()=>setPage("home")} style={{cursor:"pointer",color:"var(--rose)"}}>Home</span>
-          <span>›</span>
-          <span onClick={()=>setPage("shop")} style={{cursor:"pointer",color:"var(--rose)"}}>Shop</span>
-          <span>›</span>
-          <span style={{color:"var(--text)"}}>{data.name}</span>
+        <nav style={{display:"flex",gap:6,alignItems:"center",marginBottom:24,flexWrap:"wrap"}}>
+          {/* Back to collection — top left */}
+          <button onClick={goCollection} style={{
+            display:"flex", alignItems:"center", gap:6,
+            background:"#fff", border:"1.5px solid var(--border2)",
+            borderRadius:10, padding:"7px 14px",
+            fontSize:12, fontWeight:700, color:"var(--rose)", cursor:"pointer",
+            transition:"all .2s", marginRight:8,
+            boxShadow:"0 2px 8px rgba(194,24,91,.1)",
+          }}
+            onMouseEnter={e=>{e.currentTarget.style.background="var(--roseL)";e.currentTarget.style.borderColor="var(--rose)";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.borderColor="var(--border2)";}}
+          >
+            <span style={{fontSize:15,lineHeight:1}}>‹</span>
+            {fromSubCat || data.subCategory
+              ? <>{fromCat || data.category} <span style={{opacity:.6,fontWeight:500}}>›</span> {fromSubCat || data.subCategory}</>
+              : (fromCat || data.category)
+            }
+          </button>
+
+          <span style={{fontSize:12,color:"var(--muted)",fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
+            <span onClick={()=>setPage("home")} style={{cursor:"pointer",color:"var(--muted)"}}>Home</span>
+            <span>›</span>
+            <span onClick={()=>setPage("shop")} style={{cursor:"pointer",color:"var(--muted)"}}>Shop</span>
+            <span>›</span>
+            <span style={{color:"var(--text)",maxWidth:isMobile?160:320,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{data.name}</span>
+          </span>
         </nav>
 
         <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:isMobile?24:64,marginBottom:52}}>

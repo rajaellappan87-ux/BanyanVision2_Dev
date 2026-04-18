@@ -19,15 +19,19 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const login = async (email, password) => {
-    const res = await apiLogin({ email, password });
+  const login = async (identifier, password) => {
+    const isPhone = /^[6-9]\d{9}$/.test((identifier || "").replace(/\s+/g, ""));
+    const payload = isPhone
+      ? { phone: identifier.replace(/\s+/g, ""), password }
+      : { email: identifier.trim().toLowerCase(), password };
+    const res = await apiLogin(payload);
     localStorage.setItem("bv_token", res.data.token);
     setUser(res.data.user);
     return res.data.user;
   };
 
-  const register = async (name, email, password) => {
-    const res = await apiRegister({ name, email, password });
+  const register = async (name, email, password, phone) => {
+    const res = await apiRegister({ name, email: email || undefined, phone: phone || undefined, password });
     localStorage.setItem("bv_token", res.data.token);
     setUser(res.data.user);
     return res.data.user;

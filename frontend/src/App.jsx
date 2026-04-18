@@ -35,6 +35,8 @@ import BVPlazaApp from "./BV_Plaza/BVPlazaApp";
 function AppShell() {
   const [page, setPage] = useState("home");
   const [shopCat, setShopCat] = useState("");
+  const [shopSubCat, setShopSubCat] = useState("");
+  const [resetToken, setResetToken] = useState("");
   const { toasts, toast } = useToast();
   const { user, loading } = useAuth();
   React.useEffect(() => {
@@ -46,10 +48,12 @@ function AppShell() {
   const navigate = useCallback(p => {
     // "shop:CategoryName" → go to shop pre-filtered to that category
     if (p.startsWith("shop:")) {
-      setShopCat(p.slice(5));
+      const parts = p.slice(5).split(":");
+      setShopCat(parts[0] || "");
+      setShopSubCat(parts[1] || "");
       setPage("shop");
     } else {
-      if (p === "shop") setShopCat(""); // plain shop link clears category filter
+      if (p === "shop") { setShopCat(""); setShopSubCat(""); }
       setPage(p);
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -62,13 +66,18 @@ function AppShell() {
     }
   }, []);
 
-  // Read ?product=<id> from URL on first load for shareable links
+  // Read ?product=<id> or ?reset=<token> from URL on first load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const pid = params.get("product");
+    const rst = params.get("reset");
     if (pid) {
       setPage(`product-${pid}`);
       window.history.replaceState({}, "", `?product=${pid}`);
+    } else if (rst) {
+      setResetToken(rst);
+      setPage("login");
+      window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
 
@@ -106,21 +115,21 @@ function AppShell() {
       <Header page={page} setPage={navigate}/>
       <main>
         {page==="home"    && <HomePage      setPage={navigate} toast={toast}/>}
-        {page==="shop"    && <ShopPage      setPage={navigate} toast={toast} initialCat={shopCat}/>}
+        {page==="shop"    && <ShopPage      setPage={navigate} toast={toast} initialCat={shopCat} initialSubCat={shopSubCat} onSubCatChange={setShopSubCat}/>}
         {page==="about"   && <AboutPage     setPage={navigate}/>}
         {page==="cart"    && <CartPage      setPage={navigate} toast={toast}/>}
         {page==="checkout"&& user && <CheckoutPage  setPage={navigate} toast={toast}/>}
         {page==="orders"  && user && <OrdersPage    setPage={navigate}/>}
         {page==="wishlist"&& <WishlistPage  setPage={navigate} toast={toast}/>}
         {page==="profile" && user && <ProfilePage   toast={toast}/>}
-        {page==="login"   && <LoginPage     setPage={navigate} toast={toast}/>}
+        {page==="login"   && <LoginPage     setPage={navigate} toast={toast} resetToken={resetToken} clearResetToken={()=>setResetToken("")}/>}
         {page==="admin"   && user?.role==="admin" && <AdminDashboard setPage={navigate} toast={toast}/>}
         {page==="plaza"   && <BVPlazaApp user={user} onBack={()=>navigate("home")} toast={toast}/>}
         {page==="privacy" && <PrivacyPage   setPage={navigate}/>}
         {page==="terms"   && <TermsPage     setPage={navigate}/>}
         {page==="refund"  && <RefundPage    setPage={navigate}/>}
         {page==="shipping"&& <ShippingPolicyPage setPage={navigate}/>}
-        {isProduct && <ProductDetailPage productId={productId} setPage={navigate} toast={toast}/>}
+        {isProduct && <ProductDetailPage productId={productId} setPage={navigate} toast={toast} fromCat={shopCat} fromSubCat={shopSubCat}/>}
         {isSuccess && <OrderSuccessPage  orderId={successId}   setPage={navigate}/>}
         {is404     && <NotFoundPage setPage={navigate}/>}
       </main>
