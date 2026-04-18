@@ -59,7 +59,7 @@ const Pagination = ({ page, pages, onChange }) => {
 };
 
 /* ── SHOP PAGE ───────────────────────────────────────────────────────────────── */
-const ShopPage = ({ setPage, toast, initialCat = "" }) => {
+const ShopPage = ({ setPage, toast, initialCat = "", initialSubCat = "", onSubCatChange }) => {
   const { isMobile } = useBreakpoint();
   const catCfg = useCatConfig();
 
@@ -70,19 +70,19 @@ const ShopPage = ({ setPage, toast, initialCat = "" }) => {
 
   // Filters
   const [cat,      setCat]      = useState(initialCat || "All");
-  const [subCat,   setSubCat]   = useState("");
+  const [subCat,   setSubCat]   = useState(initialSubCat || "");
   const [sort,     setSort]     = useState("newest");
   const [search,   setSearch]   = useState("");
   const [maxPrice, setMaxPrice] = useState(25000);
   const [showF,    setShowF]    = useState(false);
   const [page,     setPageNum]  = useState(1);
 
-  // Sync when parent navigates to shop with a specific category
+  // Sync when parent navigates to shop with a specific category/subCategory
   useEffect(() => {
     const incoming = initialCat || "All";
     if (incoming !== cat) {
       setCat(incoming);
-      setSubCat("");
+      setSubCat(initialSubCat || "");
       setPageNum(1);
     }
   }, [initialCat]); // eslint-disable-line
@@ -110,8 +110,13 @@ const ShopPage = ({ setPage, toast, initialCat = "" }) => {
   useEffect(() => { load(); }, [load]);
 
   // Reset page to 1 whenever any filter changes (not page itself)
-  const changeCat = (c) => { setCat(c); setSubCat(""); setPageNum(1); };
-  const changeSubCat = (s) => { setSubCat(prev => prev === s ? "" : s); setPageNum(1); };
+  const changeCat = (c) => { setCat(c); setSubCat(""); setPageNum(1); if (onSubCatChange) onSubCatChange(""); };
+  const changeSubCat = (s) => {
+    const next = subCat === s ? "" : s;
+    setSubCat(next);
+    setPageNum(1);
+    if (onSubCatChange) onSubCatChange(next);
+  };
   const changeSort = (s) => { setSort(s); setPageNum(1); };
   const changeSearch = (s) => { setSearch(s); setPageNum(1); };
   const changeMaxPrice = (v) => { setMaxPrice(v); setPageNum(1); };
@@ -186,11 +191,42 @@ const ShopPage = ({ setPage, toast, initialCat = "" }) => {
           </button>
         </div>
 
-        {/* ── Price filter panel ── */}
+        {/* ── Quick price filter pills ── */}
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12, alignItems:"center" }}>
+          <span style={{ fontSize:10, fontWeight:700, color:"var(--muted)", letterSpacing:.5, textTransform:"uppercase", alignSelf:"center", marginRight:2 }}>Price:</span>
+          {[199, 299, 499, 999, 1999].map(p => {
+            const active = maxPrice === p;
+            return (
+              <button key={p} onClick={() => changeMaxPrice(active ? 25000 : p)} style={{
+                padding:"6px 14px", borderRadius:99, fontSize:12, fontWeight:700, cursor:"pointer",
+                border:`1.5px solid ${active ? "var(--rose)" : "var(--border2)"}`,
+                background: active ? "linear-gradient(135deg,var(--rose),var(--saffron))" : "#fff",
+                color: active ? "#fff" : "var(--text2)",
+                transition:"all .18s",
+                boxShadow: active ? "0 3px 10px rgba(194,24,91,.25)" : "none",
+                whiteSpace:"nowrap",
+              }}>
+                Under {fmt(p)}
+              </button>
+            );
+          })}
+          {maxPrice < 25000 && ![199,299,499,999,1999].includes(maxPrice) && (
+            <span style={{ fontSize:11, color:"var(--rose)", fontWeight:700, padding:"6px 10px", borderRadius:99, border:"1.5px solid var(--rose)", background:"var(--roseL)" }}>
+              Under {fmt(maxPrice)}
+            </span>
+          )}
+          {maxPrice < 25000 && (
+            <button onClick={() => changeMaxPrice(25000)} style={{ fontSize:11, color:"var(--muted)", background:"none", border:"none", cursor:"pointer", fontWeight:700, padding:"4px 2px" }}>
+              Clear ×
+            </button>
+          )}
+        </div>
+
+        {/* ── Price filter panel (slider) ── */}
         {showF && (
           <div style={{ padding:"14px 20px", borderRadius:14, background:"#fff", marginBottom:12, display:"flex", alignItems:"center", gap:16, flexWrap:"wrap", border:"1.5px solid var(--border)" }}>
             <span style={{ fontSize:13, fontWeight:700, color:"var(--rose)", whiteSpace:"nowrap" }}>Max: {fmt(maxPrice)}</span>
-            <input type="range" min={500} max={25000} step={500} value={maxPrice}
+            <input type="range" min={199} max={25000} step={100} value={maxPrice}
               onChange={e => changeMaxPrice(Number(e.target.value))}
               style={{ flex:1, accentColor:"var(--rose)", minWidth:100 }}/>
             <span style={{ fontSize:12, color:"var(--muted)", fontWeight:500 }}>₹25,000</span>

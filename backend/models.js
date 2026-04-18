@@ -14,6 +14,8 @@ const userSchema = new mongoose.Schema({
   pin:         { type: String, default: "" },
   role:     { type: String, enum: ["user", "admin"], default: "user" },
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+  resetPasswordToken:  { type: String, select: false },
+  resetPasswordExpire: { type: Date,   select: false },
 }, { timestamps: true });
 
 userSchema.pre("save", async function (next) {

@@ -171,6 +171,51 @@ const SC = {
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
+// PASSWORD RESET
+// ═════════════════════════════════════════════════════════════════════════════
+const sendPasswordReset = async ({ email, name, resetUrl }) => {
+  const html = `
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',Arial,sans-serif;background:#FDF8F3;}</style>
+</head><body>
+<div style="max-width:560px;margin:32px auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(194,24,91,.12);border:1.5px solid #F8BBD9;">
+  <div style="background:linear-gradient(135deg,#C2185B,#F9A825);padding:36px 32px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:10px;">🔐</div>
+    <div style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#fff;letter-spacing:.5px;">Password Reset</div>
+    <div style="color:rgba(255,255,255,.85);font-size:13px;margin-top:6px;font-weight:500;">BanyanVision Account Security</div>
+  </div>
+  <div style="padding:36px 32px;">
+    <p style="font-size:16px;color:#1A0A00;font-weight:600;margin-bottom:8px;">Hi ${name || "there"},</p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:24px;">We received a request to reset your BanyanVision account password. Click the button below to set a new password. This link will expire in <strong>30 minutes</strong>.</p>
+
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${resetUrl}" style="display:inline-block;background:linear-gradient(135deg,#C2185B,#F9A825);color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:16px 40px;border-radius:50px;letter-spacing:.5px;box-shadow:0 6px 20px rgba(194,24,91,.35);">
+        Reset My Password →
+      </a>
+    </div>
+
+    <div style="background:#FFF8F0;border:1.5px solid #FDDAB0;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+      <p style="font-size:12px;color:#B45309;font-weight:600;margin-bottom:4px;">⚠ Didn't request this?</p>
+      <p style="font-size:12px;color:#92400E;line-height:1.6;">If you didn't ask to reset your password, you can safely ignore this email. Your account remains secure.</p>
+    </div>
+
+    <p style="font-size:12px;color:#aaa;line-height:1.6;">If the button doesn't work, copy and paste this link into your browser:<br>
+    <span style="color:#C2185B;word-break:break-all;">${resetUrl}</span></p>
+  </div>
+  <div style="background:#FDF8F3;padding:20px 32px;text-align:center;border-top:1.5px solid #F8BBD9;">
+    <p style="font-size:11px;color:#aaa;">© ${new Date().getFullYear()} BanyanVision · This link expires in 30 minutes</p>
+  </div>
+</div>
+</body></html>`;
+
+  return sendSafe({
+    to: email,
+    subject: "Reset Your BanyanVision Password 🔐",
+    html,
+  });
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
 // 1. ORDER CONFIRMATION
 // ═════════════════════════════════════════════════════════════════════════════
 const sendOrderConfirmation = async ({ order, user }) => {
@@ -634,6 +679,6 @@ const sendOfferPromo = async ({ offer, users }) => {
 module.exports = {
   sendOrderConfirmation, sendStatusUpdate, sendThankYou,
   sendReviewAck, sendSafe, sendOrdersExportEmail,
-  sendProductPromo, sendOfferPromo,
+  sendProductPromo, sendOfferPromo, sendPasswordReset,
   verifySmtp, diagnoseMail,
 };

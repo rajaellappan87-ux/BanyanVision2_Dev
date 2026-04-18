@@ -63,10 +63,12 @@ API.interceptors.response.use(
 );
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
-export const apiRegister      = (data)        => API.post("/auth/register", data);
-export const apiLogin         = (data)        => API.post("/auth/login", data);
-export const apiGetMe         = ()            => API.get("/auth/me");
-export const apiUpdateProfile = (data)        => API.put("/auth/profile", data);
+export const apiRegister       = (data)         => API.post("/auth/register", data);
+export const apiLogin          = (data)         => API.post("/auth/login", data);
+export const apiGetMe          = ()             => API.get("/auth/me");
+export const apiUpdateProfile  = (data)         => API.put("/auth/profile", data);
+export const apiForgotPassword = (email)        => API.post("/auth/forgot-password", { email });
+export const apiResetPassword  = (token, pass)  => API.post(`/auth/reset-password/${token}`, { password: pass });
 
 // ── Products ──────────────────────────────────────────────────────────────────
 export const apiGetProducts        = (params) => API.get("/products", { params });
